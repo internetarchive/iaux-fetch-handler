@@ -1,13 +1,13 @@
 {
-  "name": "@internetarchive/your-webcomponent",
-  "description": "The Internet Archive Typescript WebComponent template. It is based on the @open-wc template.",
+  "name": "@internetarchive/fetch-handler-service",
+  "description": "A custom service for handling API requests",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/internetarchive/iaux-your-webcomponent.git"
   },
   "license": "AGPL-3.0-only",
   "author": "Internet Archive",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "scripts": {
@@ -68,6 +68,7 @@
     ]
   },
   "dependencies": {
+    "@internetarchive/analytics-manager": "^0.1.4",
     "lit": "^2.8.0"
   }
 }

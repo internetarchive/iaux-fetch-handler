@@ -1,1 +1,1 @@
-export { YourWebComponent } from './src/your-webcomponent';
+export { FetchHandler } from './src/fetch-handler';
