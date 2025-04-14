@@ -1,1 +1,1 @@
-export { FetchHandler } from './src/fetch-handler';
+export { IaFetchHandler } from './src/ia-fetch-handler';

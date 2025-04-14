@@ -7,7 +7,7 @@ import type { FetchHandlerInterface } from './fetch-handler-interface';
  * - add `reCache=1` to the request if it's in the current url so the backend sees it
  * - add convenience method for fetching/decoding an API response by just the path
  */
-export class FetchHandler implements FetchHandlerInterface {
+export class IaFetchHandler implements FetchHandlerInterface {
   private iaApiBaseUrl?: string;
 
   private fetchRetrier: FetchRetrierInterface = new FetchRetrier();

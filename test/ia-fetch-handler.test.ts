@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { FetchHandler } from '../src/fetch-handler';
+import { IaFetchHandler } from '../src/ia-fetch-handler';
 import { FetchRetrierInterface } from '../src/utils/fetch-retrier';
 
 class MockFetchRetrier implements FetchRetrierInterface {
@@ -23,7 +23,7 @@ describe('Fetch Handler', () => {
   describe('fetch', () => {
     it('adds reCache=1 if it is in the current url', async () => {
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
+      const fetchHandler = new IaFetchHandler({
         fetchRetrier: fetchRetrier,
         searchParams: '?reCache=1',
       });
@@ -38,7 +38,7 @@ describe('Fetch Handler', () => {
     it('prepends the IA basehost to the url when making a request', async () => {
       const endpoint = '/foo/service/endpoint.php';
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
+      const fetchHandler = new IaFetchHandler({
         iaApiBaseUrl: 'www.example.com',
         fetchRetrier: fetchRetrier,
       });
@@ -53,7 +53,7 @@ describe('Fetch Handler', () => {
     it('adds credentials: include if requested', async () => {
       const endpoint = '/foo/service/endpoint.php';
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
+      const fetchHandler = new IaFetchHandler({
         iaApiBaseUrl: 'www.example.com',
         fetchRetrier: fetchRetrier,
       });
