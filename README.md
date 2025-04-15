@@ -1,6 +1,7 @@
-![Build Status](https://github.com/internetarchive/iaux-typescript-wc-template/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/internetarchive/iaux-typescript-wc-template/graph/badge.svg?token=ZOYRJ2BV9W)](https://codecov.io/gh/internetarchive/iaux-typescript-wc-template)
+![Build Status](https://github.com/internetarchive/iaux-fetch-handler-service/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service/graph/badge.svg?token=ZOYRJ2BV9W)](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service)
 
-# Internet Archive Search Service
+
+# Internet Archive Fetch Handler Service
 
 
 A custom service for handling API requests.
@@ -9,7 +10,7 @@ A custom service for handling API requests.
 ## Installation
 
 ```bash
-npm install @internetarchive/search-service
+npm install @internetarchive/fetch-handler-service
 ```
 
 
