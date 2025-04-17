@@ -1,1 +1,1 @@
-export { YourWebComponent } from './src/your-webcomponent';
+export { IaFetchHandler } from './src/ia-fetch-handler';
