@@ -1,5 +1,5 @@
 import type { AnalyticsEvent } from '@internetarchive/analytics-manager';
-import type { AnalyticsHandlerInterface } from '../../src/service/analytics-handler-interface';
+import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
 
 export type MockAnalyticsEvent = AnalyticsEvent & {
   bucketType: '1%' | '100%';
