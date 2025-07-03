@@ -1,5 +1,5 @@
-import type { AnalyticsHandlerInterface } from '../service/analytics-handler-interface';
-import { AnalyticsHandler } from '../service/analytics-handler';
+import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
+import { AnalyticsHandler } from '@internetarchive/analytics-manager';
 import { promisedSleep } from './promised-sleep';
 
 /**
