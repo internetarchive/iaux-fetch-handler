@@ -1,16 +1,16 @@
 ![Build Status](https://github.com/internetarchive/iaux-fetch-handler-service/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service/graph/badge.svg?token=ZOYRJ2BV9W)](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service)
 
 
-# Internet Archive Fetch Handler Service
+# Internet Archive Fetch Handler library
 
 
-A custom service for handling API requests.
+A custom library for handling API requests.
 
 
 ## Installation
 
 ```bash
-npm install @internetarchive/fetch-handler-service
+npm install @internetarchive/iaux-fetch-handler
 ```
 
 

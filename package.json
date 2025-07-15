@@ -1,9 +1,9 @@
 {
-  "name": "@internetarchive/fetch-handler",
+  "name": "@internetarchive/iaux-fetch-handler",
   "description": "A custom service for handling API requests",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/internetarchive/fetch-handler.git"
+    "url": "git+https://github.com/internetarchive/iaux-fetch-handler.git"
   },
   "license": "AGPL-3.0-only",
   "author": "Internet Archive",
