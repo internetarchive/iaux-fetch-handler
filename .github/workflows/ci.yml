@@ -12,9 +12,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
         node-version: latest
+  
+    - name: Clean install (remove lockfile and node_modules)
+      run: |
+        rm -rf node_modules package-lock.json
 
     - name: Install dependencies
       run: npm install
