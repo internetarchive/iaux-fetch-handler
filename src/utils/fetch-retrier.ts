@@ -1,7 +1,6 @@
 import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
 import { AnalyticsHandler } from '@internetarchive/analytics-manager';
 import { promisedSleep } from './promised-sleep';
-import type { ApiRequestInit } from '../fetch-handler-interface';
 
 /**
  * A class that retries a fetch request.
@@ -17,8 +16,11 @@ export interface FetchRetrierInterface {
    */
   fetchRetry(
     requestInfo: RequestInfo,
-    init?: ApiRequestInit,
-    retries?: number,
+    init?: RequestInit,
+    shouldRetry?: (
+      response: Response | null,
+      retryNumber: number,
+    ) => Promise<boolean>,
   ): Promise<Response>;
 }
 
@@ -48,27 +50,26 @@ export class FetchRetrier implements FetchRetrierInterface {
   public async fetchRetry(
     requestInfo: RequestInfo,
     init?: RequestInit,
-    retries: number = this.retryCount,
+    shouldRetry: (
+      response: Response | null,
+      retryNumber: number,
+    ) => Promise<boolean> = async response =>
+      response !== null && response.status >= 400 && response.status < 500,
   ): Promise<Response> {
     const urlString =
       typeof requestInfo === 'string' ? requestInfo : requestInfo.url;
-    const retryNumber = this.retryCount - retries + 1;
-    const shouldRetry =
-      (init as ApiRequestInit | undefined)?.shouldRetry ?? false;
+    const retryNumber = this.retryCount;
 
     try {
       const response = await fetch(requestInfo, init);
       if (response.ok) return response;
-
-      if (!shouldRetry) {
-        // don't retry on 4xx errors in general since this will never succeed
-        if (response.status >= 400 && response.status < 500) {
-          this.log4xxEvent(urlString);
-          return response;
-        }
+      // don't retry on a 404 since this will never succeed
+      if (response.status === 404) {
+        this.log404Event(urlString);
+        return response;
       }
 
-      if (retries > 0) {
+      if (await shouldRetry(response, retryNumber)) {
         await this.sleep(this.retryDelay);
         this.logRetryEvent(
           urlString,
@@ -76,7 +77,7 @@ export class FetchRetrier implements FetchRetrierInterface {
           response.statusText,
           response.status,
         );
-        return this.fetchRetry(requestInfo, init, retries - 1);
+        return this.fetchRetry(requestInfo, init, shouldRetry);
       }
       this.logFailureEvent(urlString, response.status);
       return response;
@@ -87,12 +88,10 @@ export class FetchRetrier implements FetchRetrierInterface {
         throw error;
       }
 
-      if (retries > 0) {
+      if (await shouldRetry(null, retryNumber)) {
         await this.sleep(this.retryDelay);
-        // intentionally duplicating the error message here since we want something
-        // in the status code even though we won't have an actual code
         this.logRetryEvent(urlString, retryNumber, error, error);
-        return this.fetchRetry(requestInfo, init, retries - 1);
+        return this.fetchRetry(requestInfo, init, shouldRetry);
       }
 
       this.logFailureEvent(urlString, error);
@@ -130,10 +129,10 @@ export class FetchRetrier implements FetchRetrierInterface {
     });
   }
 
-  private log4xxEvent(urlString: string) {
+  private log404Event(urlString: string) {
     this.analyticsHandler.sendEvent({
       category: this.eventCategory,
-      action: 'status4xxNotRetrying',
+      action: 'status404NotRetrying',
       label: `url: ${urlString}`,
     });
   }

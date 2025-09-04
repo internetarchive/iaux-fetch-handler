@@ -1,14 +1,11 @@
-export interface ApiRequestInit extends RequestInit {
-  shouldRetry?: boolean;
-}
 export interface FetchHandlerInterface {
   /**
    * Generic fetch function that handles retries and common IA parameters like `reCache=1`
    *
    * @param input RequestInfo
-   * @param init ApiRequestInit
+   * @param init RequestInit
    */
-  fetch(input: RequestInfo, init?: ApiRequestInit): Promise<Response>;
+  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
 
   /**
    * A helper function to fetch a response from an API and get a JSON object

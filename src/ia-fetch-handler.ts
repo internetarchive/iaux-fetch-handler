@@ -1,8 +1,5 @@
 import { FetchRetrier, FetchRetrierInterface } from './utils/fetch-retrier';
-import type {
-  ApiRequestInit,
-  FetchHandlerInterface,
-} from './fetch-handler-interface';
+import type { FetchHandlerInterface } from './fetch-handler-interface';
 
 /**
  * The FetchHandler adds some common helpers:
@@ -17,10 +14,20 @@ export class IaFetchHandler implements FetchHandlerInterface {
 
   private searchParams?: string;
 
+  private shouldRetry?: (
+    response: Response | null,
+    retries: number,
+  ) => Promise<boolean> = async response =>
+    response !== null && response.status >= 400 && response.status < 500;
+
   constructor(options?: {
     iaApiBaseUrl?: string;
     fetchRetrier?: FetchRetrierInterface;
     searchParams?: string;
+    shouldRetry?: (
+      response: Response | null,
+      retryNumber: number,
+    ) => Promise<boolean>;
   }) {
     if (options?.iaApiBaseUrl) this.iaApiBaseUrl = options.iaApiBaseUrl;
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;
@@ -29,6 +36,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
     } else {
       this.searchParams = window.location.search;
     }
+    if (options?.shouldRetry) this.shouldRetry = options.shouldRetry;
   }
 
   /** @inheritdoc */
@@ -36,7 +44,6 @@ export class IaFetchHandler implements FetchHandlerInterface {
     path: string,
     options?: {
       includeCredentials?: boolean;
-      shouldRetry?: boolean;
     },
   ): Promise<T> {
     const url = `${this.iaApiBaseUrl}${path}`;
@@ -51,15 +58,13 @@ export class IaFetchHandler implements FetchHandlerInterface {
       method?: string;
       body?: BodyInit;
       headers?: HeadersInit;
-      shouldRetry?: boolean;
     },
   ): Promise<T> {
-    const requestInit: ApiRequestInit = {};
+    const requestInit: RequestInit = {};
     if (options?.includeCredentials) requestInit.credentials = 'include';
     if (options?.method) requestInit.method = options.method;
     if (options?.body) requestInit.body = options.body;
     if (options?.headers) requestInit.headers = options.headers;
-    if (options?.shouldRetry) requestInit.shouldRetry = options.shouldRetry;
     const response = await this.fetch(url, requestInit);
     const json = await response.json();
     return json as T;
@@ -72,7 +77,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
     if (urlParams.get('reCache') === '1') {
       finalInput = this.addSearchParams(input, { reCache: '1' });
     }
-    return this.fetchRetrier.fetchRetry(finalInput, init);
+    return this.fetchRetrier.fetchRetry(finalInput, init, this.shouldRetry);
   }
 
   /**
