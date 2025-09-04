@@ -33,6 +33,21 @@ describe('FetchRetrier', () => {
     expect(analytics.events.length).to.equal(0);
   });
 
+  it('does not retry on 403 and logs event', async () => {
+    fetchStub.resolves(new Response('forbidden', { status: 403 }));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      sleepFn: sleepStub,
+    });
+
+    const res = await retrier.fetchRetry('https://foo.org/403');
+
+    expect(res.status).to.equal(403);
+    expect(fetchStub.callCount).to.equal(1);
+    expect(sleepStub.callCount).to.equal(0);
+    expect(analytics.events[0].action).to.equal('status4xxNotRetrying');
+  });
+
   it('does not retry on 404 and logs event', async () => {
     fetchStub.resolves(new Response('not found', { status: 404 }));
     const retrier = new FetchRetrier({
@@ -45,7 +60,31 @@ describe('FetchRetrier', () => {
     expect(res.status).to.equal(404);
     expect(fetchStub.callCount).to.equal(1);
     expect(sleepStub.callCount).to.equal(0);
-    expect(analytics.events[0].action).to.equal('status404NotRetrying');
+    expect(analytics.events[0].action).to.equal('status4xxNotRetrying');
+  });
+
+  it('retries on 4xx if shouldRetry is true in ApiRequestInit', async () => {
+    fetchStub.onCall(0).resolves(new Response('bad request', { status: 400 }));
+    fetchStub.onCall(1).resolves(new Response('ok', { status: 200 }));
+
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      retryCount: 1,
+      retryDelay: 1,
+      sleepFn: sleepStub,
+    });
+
+    const apiRequestInit = { shouldRetry: true } as any;
+
+    const res = await retrier.fetchRetry(
+      'https://foo.org/should-retry',
+      apiRequestInit,
+    );
+
+    expect(res.status).to.equal(200);
+    expect(fetchStub.callCount).to.equal(2);
+    expect(sleepStub.calledOnce).to.be.true;
+    expect(analytics.events.some(e => e.action === 'retryingFetch')).to.be.true;
   });
 
   it('retries on 500 and logs retry/failure events', async () => {

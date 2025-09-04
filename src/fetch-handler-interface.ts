@@ -1,11 +1,14 @@
+export interface ApiRequestInit extends RequestInit {
+  shouldRetry?: boolean;
+}
 export interface FetchHandlerInterface {
   /**
    * Generic fetch function that handles retries and common IA parameters like `reCache=1`
    *
    * @param input RequestInfo
-   * @param init RequestInit
+   * @param init ApiRequestInit
    */
-  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
+  fetch(input: RequestInfo, init?: ApiRequestInit): Promise<Response>;
 
   /**
    * A helper function to fetch a response from an API and get a JSON object
@@ -20,6 +23,7 @@ export interface FetchHandlerInterface {
       method?: string;
       body?: BodyInit;
       headers?: HeadersInit;
+      shouldRetry?: boolean;
     },
   ): Promise<T>;
 
@@ -30,10 +34,10 @@ export interface FetchHandlerInterface {
    * of the full URL. If you need a full URL, use `fetchApiResponse` instead.
    *
    * @param path string
-   * @param options?: { includeCredentials?: boolean }
+   * @param options?: { includeCredentials?: boolean, shouldRetry?: boolean }
    */
   fetchIAApiResponse<T>(
     path: string,
-    options?: { includeCredentials?: boolean },
+    options?: { includeCredentials?: boolean; shouldRetry?: boolean },
   ): Promise<T>;
 }

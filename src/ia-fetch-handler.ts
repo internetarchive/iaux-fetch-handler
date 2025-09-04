@@ -1,5 +1,8 @@
 import { FetchRetrier, FetchRetrierInterface } from './utils/fetch-retrier';
-import type { FetchHandlerInterface } from './fetch-handler-interface';
+import type {
+  ApiRequestInit,
+  FetchHandlerInterface,
+} from './fetch-handler-interface';
 
 /**
  * The FetchHandler adds some common helpers:
@@ -33,6 +36,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
     path: string,
     options?: {
       includeCredentials?: boolean;
+      shouldRetry?: boolean;
     },
   ): Promise<T> {
     const url = `${this.iaApiBaseUrl}${path}`;
@@ -47,13 +51,15 @@ export class IaFetchHandler implements FetchHandlerInterface {
       method?: string;
       body?: BodyInit;
       headers?: HeadersInit;
+      shouldRetry?: boolean;
     },
   ): Promise<T> {
-    const requestInit: RequestInit = {};
+    const requestInit: ApiRequestInit = {};
     if (options?.includeCredentials) requestInit.credentials = 'include';
     if (options?.method) requestInit.method = options.method;
     if (options?.body) requestInit.body = options.body;
     if (options?.headers) requestInit.headers = options.headers;
+    if (options?.shouldRetry) requestInit.shouldRetry = options.shouldRetry;
     const response = await this.fetch(url, requestInit);
     const json = await response.json();
     return json as T;

@@ -1,15 +1,15 @@
 import { expect } from '@open-wc/testing';
 import { IaFetchHandler } from '../src/ia-fetch-handler';
 import { FetchRetrierInterface } from '../src/utils/fetch-retrier';
-
+import type { ApiRequestInit } from '../src/fetch-handler-interface';
 class MockFetchRetrier implements FetchRetrierInterface {
   requestInfo?: RequestInfo;
-  init?: RequestInit;
+  init?: ApiRequestInit;
   retries?: number;
 
   async fetchRetry(
     requestInfo: RequestInfo,
-    init?: RequestInit,
+    init?: ApiRequestInit,
     retries?: number,
   ): Promise<Response> {
     this.init = init;
@@ -62,5 +62,18 @@ describe('Fetch Handler', () => {
       });
       expect(fetchRetrier.init).to.deep.equal({ credentials: 'include' });
     });
+  });
+
+  it('sets shouldRetry in requestInit if requested', async () => {
+    const endpoint = '/foo/service/endpoint.php';
+    const fetchRetrier = new MockFetchRetrier();
+    const fetchHandler = new IaFetchHandler({
+      iaApiBaseUrl: 'www.example.com',
+      fetchRetrier: fetchRetrier,
+    });
+    await fetchHandler.fetchApiResponse(endpoint, {
+      shouldRetry: true,
+    });
+    expect(fetchRetrier.init).to.deep.equal({ shouldRetry: true });
   });
 });

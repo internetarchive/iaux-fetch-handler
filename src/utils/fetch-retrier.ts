@@ -1,6 +1,7 @@
 import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
 import { AnalyticsHandler } from '@internetarchive/analytics-manager';
 import { promisedSleep } from './promised-sleep';
+import type { ApiRequestInit } from '../fetch-handler-interface';
 
 /**
  * A class that retries a fetch request.
@@ -16,7 +17,7 @@ export interface FetchRetrierInterface {
    */
   fetchRetry(
     requestInfo: RequestInfo,
-    init?: RequestInit,
+    init?: ApiRequestInit,
     retries?: number,
   ): Promise<Response>;
 }
@@ -52,15 +53,21 @@ export class FetchRetrier implements FetchRetrierInterface {
     const urlString =
       typeof requestInfo === 'string' ? requestInfo : requestInfo.url;
     const retryNumber = this.retryCount - retries + 1;
+    const shouldRetry =
+      (init as ApiRequestInit | undefined)?.shouldRetry ?? false;
 
     try {
       const response = await fetch(requestInfo, init);
       if (response.ok) return response;
-      // don't retry on a 404 since this will never succeed
-      if (response.status === 404) {
-        this.log404Event(urlString);
-        return response;
+
+      if (!shouldRetry) {
+        // don't retry on 4xx errors in general since this will never succeed
+        if (response.status >= 400 && response.status < 500) {
+          this.log4xxEvent(urlString);
+          return response;
+        }
       }
+
       if (retries > 0) {
         await this.sleep(this.retryDelay);
         this.logRetryEvent(
@@ -123,10 +130,10 @@ export class FetchRetrier implements FetchRetrierInterface {
     });
   }
 
-  private log404Event(urlString: string) {
+  private log4xxEvent(urlString: string) {
     this.analyticsHandler.sendEvent({
       category: this.eventCategory,
-      action: 'status404NotRetrying',
+      action: 'status4xxNotRetrying',
       label: `url: ${urlString}`,
     });
   }
