@@ -1,3 +1,5 @@
+import type { ShouldRetryHandler } from './should-retry-handler';
+
 export interface FetchHandlerInterface {
   /**
    * Generic fetch function that handles retries and common IA parameters like `reCache=1`
@@ -6,6 +8,11 @@ export interface FetchHandlerInterface {
    * @param init RequestInit
    */
   fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
+
+  fetchWithOptions(
+    request: RequestInfo,
+    options?: { init?: RequestInit; shouldRetryHandler?: ShouldRetryHandler },
+  ): Promise<Response>;
 
   /**
    * A helper function to fetch a response from an API and get a JSON object

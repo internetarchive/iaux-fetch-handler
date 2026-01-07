@@ -1,6 +1,7 @@
 import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
 import { AnalyticsHandler } from '@internetarchive/analytics-manager';
 import { promisedSleep } from './promised-sleep';
+import type { ShouldRetryHandler } from '../should-retry-handler';
 
 /**
  * A class that retries a fetch request.
@@ -14,13 +15,14 @@ export interface FetchRetrierInterface {
    * @param retries Optional number of retries to attempt
    * @returns Promise<Response>
    */
-  fetchRetry(
+  fetchRetry(requestInfo: RequestInfo, init?: RequestInit): Promise<Response>;
+
+  fetchRetryWithOptions(
     requestInfo: RequestInfo,
-    init?: RequestInit,
-    shouldRetry?: (
-      response: Response | null,
-      retryNumber: number,
-    ) => Promise<boolean>,
+    options?: {
+      init?: RequestInit;
+      shouldRetryHandler?: ShouldRetryHandler;
+    },
   ): Promise<Response>;
 }
 
@@ -50,18 +52,24 @@ export class FetchRetrier implements FetchRetrierInterface {
   public async fetchRetry(
     requestInfo: RequestInfo,
     init?: RequestInit,
-    shouldRetry: (
-      response: Response | null,
-      retryNumber: number,
-    ) => Promise<boolean> = async response =>
-      response !== null && response.status >= 400 && response.status < 500,
+  ): Promise<Response> {
+    return this.fetchRetryWithOptions(requestInfo, { init });
+  }
+
+  /** @inheritdoc */
+  public async fetchRetryWithOptions(
+    requestInfo: RequestInfo,
+    options?: {
+      init?: RequestInit;
+      shouldRetryHandler?: ShouldRetryHandler;
+    },
   ): Promise<Response> {
     const urlString =
       typeof requestInfo === 'string' ? requestInfo : requestInfo.url;
     const retryNumber = this.retryCount;
 
     try {
-      const response = await fetch(requestInfo, init);
+      const response = await fetch(requestInfo, options?.init);
       if (response.ok) return response;
       // don't retry on a 404 since this will never succeed
       if (response.status === 404) {
@@ -69,7 +77,7 @@ export class FetchRetrier implements FetchRetrierInterface {
         return response;
       }
 
-      if (await shouldRetry(response, retryNumber)) {
+      if (await options?.shouldRetryHandler?.(response, retryNumber)) {
         await this.sleep(this.retryDelay);
         this.logRetryEvent(
           urlString,
@@ -77,7 +85,10 @@ export class FetchRetrier implements FetchRetrierInterface {
           response.statusText,
           response.status,
         );
-        return this.fetchRetry(requestInfo, init, shouldRetry);
+        return this.fetchRetryWithOptions(requestInfo, {
+          init: options?.init,
+          shouldRetryHandler: options?.shouldRetryHandler,
+        });
       }
       this.logFailureEvent(urlString, response.status);
       return response;
@@ -88,10 +99,13 @@ export class FetchRetrier implements FetchRetrierInterface {
         throw error;
       }
 
-      if (await shouldRetry(null, retryNumber)) {
+      if (await options?.shouldRetryHandler?.(null, retryNumber)) {
         await this.sleep(this.retryDelay);
         this.logRetryEvent(urlString, retryNumber, error, error);
-        return this.fetchRetry(requestInfo, init, shouldRetry);
+        return this.fetchRetryWithOptions(requestInfo, {
+          init: options?.init,
+          shouldRetryHandler: options?.shouldRetryHandler,
+        });
       }
 
       this.logFailureEvent(urlString, error);

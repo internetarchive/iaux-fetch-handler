@@ -1,5 +1,9 @@
 import { FetchRetrier, FetchRetrierInterface } from './utils/fetch-retrier';
 import type { FetchHandlerInterface } from './fetch-handler-interface';
+import {
+  defaultShouldRetryHandler,
+  type ShouldRetryHandler,
+} from './should-retry-handler';
 
 /**
  * The FetchHandler adds some common helpers:
@@ -14,20 +18,13 @@ export class IaFetchHandler implements FetchHandlerInterface {
 
   private searchParams?: string;
 
-  private shouldRetry?: (
-    response: Response | null,
-    retries: number,
-  ) => Promise<boolean> = async response =>
-    response !== null && response.status >= 400 && response.status < 500;
+  private shouldRetryHandler: ShouldRetryHandler = defaultShouldRetryHandler;
 
   constructor(options?: {
     iaApiBaseUrl?: string;
     fetchRetrier?: FetchRetrierInterface;
     searchParams?: string;
-    shouldRetry?: (
-      response: Response | null,
-      retryNumber: number,
-    ) => Promise<boolean>;
+    defaultShouldRetryHandler?: ShouldRetryHandler;
   }) {
     if (options?.iaApiBaseUrl) this.iaApiBaseUrl = options.iaApiBaseUrl;
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;
@@ -36,7 +33,8 @@ export class IaFetchHandler implements FetchHandlerInterface {
     } else {
       this.searchParams = window.location.search;
     }
-    if (options?.shouldRetry) this.shouldRetry = options.shouldRetry;
+    if (options?.defaultShouldRetryHandler)
+      this.shouldRetryHandler = options.defaultShouldRetryHandler;
   }
 
   /** @inheritdoc */
@@ -77,7 +75,10 @@ export class IaFetchHandler implements FetchHandlerInterface {
     if (urlParams.get('reCache') === '1') {
       finalInput = this.addSearchParams(input, { reCache: '1' });
     }
-    return this.fetchRetrier.fetchRetry(finalInput, init, this.shouldRetry);
+    return this.fetchRetrier.fetchRetryWithOptions(finalInput, {
+      init,
+      shouldRetryHandler: this.shouldRetryHandler,
+    });
   }
 
   /**
