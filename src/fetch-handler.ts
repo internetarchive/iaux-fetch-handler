@@ -1,9 +1,10 @@
-import { FetchRetrier, FetchRetrierInterface } from './utils/fetch-retrier';
-import type { FetchHandlerInterface } from './fetch-handler-interface';
 import {
-  defaultShouldRetryHandler,
-  type ShouldRetryHandler,
-} from './should-retry-handler';
+  FetchRetrier,
+  FetchRetrierInterface,
+} from './fetch-retry/fetch-retrier';
+import type { FetchHandlerInterface } from './fetch-handler-interface';
+import type { RetryConfiguring } from './fetch-retry/fetch-retry-configuring';
+import type { FetchOptions } from './fetch-options';
 
 /**
  * The FetchHandler adds some common helpers:
@@ -18,13 +19,11 @@ export class IaFetchHandler implements FetchHandlerInterface {
 
   private searchParams?: string;
 
-  private shouldRetryHandler: ShouldRetryHandler = defaultShouldRetryHandler;
-
   constructor(options?: {
     iaApiBaseUrl?: string;
     fetchRetrier?: FetchRetrierInterface;
     searchParams?: string;
-    defaultShouldRetryHandler?: ShouldRetryHandler;
+    defaultRetryConfiguration?: RetryConfiguring;
   }) {
     if (options?.iaApiBaseUrl) this.iaApiBaseUrl = options.iaApiBaseUrl;
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;
@@ -33,8 +32,6 @@ export class IaFetchHandler implements FetchHandlerInterface {
     } else {
       this.searchParams = window.location.search;
     }
-    if (options?.defaultShouldRetryHandler)
-      this.shouldRetryHandler = options.defaultShouldRetryHandler;
   }
 
   /** @inheritdoc */
@@ -42,6 +39,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
     path: string,
     options?: {
       includeCredentials?: boolean;
+      retryConfig?: RetryConfiguring;
     },
   ): Promise<T> {
     const url = `${this.iaApiBaseUrl}${path}`;
@@ -56,6 +54,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
       method?: string;
       body?: BodyInit;
       headers?: HeadersInit;
+      retryConfig?: RetryConfiguring;
     },
   ): Promise<T> {
     const requestInit: RequestInit = {};
@@ -63,22 +62,25 @@ export class IaFetchHandler implements FetchHandlerInterface {
     if (options?.method) requestInit.method = options.method;
     if (options?.body) requestInit.body = options.body;
     if (options?.headers) requestInit.headers = options.headers;
-    const response = await this.fetch(url, requestInit);
+    const response = await this.fetch(url, {
+      requestInit: requestInit,
+      retryConfig: options?.retryConfig,
+    });
     const json = await response.json();
     return json as T;
   }
 
   /** @inheritdoc */
-  async fetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
-    let finalInput = input;
+  async fetch(
+    request: RequestInfo,
+    options?: RequestInit | FetchOptions,
+  ): Promise<Response> {
+    let finalRequest = request;
     const urlParams = new URLSearchParams(this.searchParams);
     if (urlParams.get('reCache') === '1') {
-      finalInput = this.addSearchParams(input, { reCache: '1' });
+      finalRequest = this.addSearchParams(request, { reCache: '1' });
     }
-    return this.fetchRetrier.fetchRetryWithOptions(finalInput, {
-      init,
-      shouldRetryHandler: this.shouldRetryHandler,
-    });
+    return this.fetchRetrier.fetchRetry(finalRequest, options);
   }
 
   /**
@@ -86,20 +88,20 @@ export class IaFetchHandler implements FetchHandlerInterface {
    * the way we add search params to it depending on the input.
    */
   private addSearchParams(
-    input: RequestInfo,
+    request: RequestInfo,
     params: Record<string, string>,
   ): RequestInfo {
-    const urlString = typeof input === 'string' ? input : input.url;
+    const urlString = typeof request === 'string' ? request : request.url;
     const url = new URL(urlString, window.location.href);
 
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, value);
     }
 
-    if (typeof input === 'string') {
+    if (typeof request === 'string') {
       return url.href;
     } else {
-      const newRequest = new Request(url.href, input);
+      const newRequest = new Request(url.href, request);
       return newRequest;
     }
   }

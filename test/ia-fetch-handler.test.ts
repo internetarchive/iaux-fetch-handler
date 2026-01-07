@@ -1,15 +1,15 @@
 import { expect } from '@open-wc/testing';
-import { IaFetchHandler } from '../src/ia-fetch-handler';
-import { FetchRetrierInterface } from '../src/utils/fetch-retrier';
-import type { ApiRequestInit } from '../src/fetch-handler-interface';
+import { IaFetchHandler } from '../src/fetch-handler';
+import { FetchRetrierInterface } from '../src/fetch-retry/fetch-retrier';
+
 class MockFetchRetrier implements FetchRetrierInterface {
   requestInfo?: RequestInfo;
-  init?: ApiRequestInit;
+  init?: RequestInit;
   retries?: number;
 
   async fetchRetry(
     requestInfo: RequestInfo,
-    init?: ApiRequestInit,
+    init?: RequestInit,
     retries?: number,
   ): Promise<Response> {
     this.init = init;

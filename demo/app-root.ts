@@ -1,7 +1,7 @@
 import { html, LitElement, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import { IaFetchHandler } from '../src/ia-fetch-handler';
+import { IaFetchHandler } from '../src/fetch-handler';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {

@@ -1,17 +1,16 @@
-import type { ShouldRetryHandler } from './should-retry-handler';
+import type { FetchOptions } from './fetch-options';
+import type { RetryConfiguring } from './fetch-retry/fetch-retry-configuring';
 
 export interface FetchHandlerInterface {
   /**
    * Generic fetch function that handles retries and common IA parameters like `reCache=1`
    *
    * @param input RequestInfo
-   * @param init RequestInit
+   * @param options RequestInit | FetchOptions
    */
-  fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
-
-  fetchWithOptions(
-    request: RequestInfo,
-    options?: { init?: RequestInit; shouldRetryHandler?: ShouldRetryHandler },
+  fetch(
+    input: RequestInfo,
+    options?: RequestInit | FetchOptions,
   ): Promise<Response>;
 
   /**
@@ -27,7 +26,7 @@ export interface FetchHandlerInterface {
       method?: string;
       body?: BodyInit;
       headers?: HeadersInit;
-      shouldRetry?: boolean;
+      retryConfig?: RetryConfiguring;
     },
   ): Promise<T>;
 
@@ -42,6 +41,6 @@ export interface FetchHandlerInterface {
    */
   fetchIAApiResponse<T>(
     path: string,
-    options?: { includeCredentials?: boolean; shouldRetry?: boolean },
+    options?: { includeCredentials?: boolean; retryConfig?: RetryConfiguring },
   ): Promise<T>;
 }

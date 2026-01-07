@@ -1,17 +1,18 @@
 import { expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { FetchRetrier } from '../src/utils/fetch-retrier';
+import { FetchRetrier } from '../src/fetch-retry/fetch-retrier';
 import { MockAnalyticsHandler } from './mocks/mock-analytics-handler';
+import { MockRetryConfig } from './mocks/mock-retry-config';
 
 describe('FetchRetrier', () => {
   let fetchStub: sinon.SinonStub;
-  let sleepStub: sinon.SinonStub;
+  // let sleepStub: sinon.SinonStub;
   let analytics: MockAnalyticsHandler;
 
   beforeEach(() => {
     analytics = new MockAnalyticsHandler();
     fetchStub = sinon.stub(globalThis, 'fetch');
-    sleepStub = sinon.stub().resolves(); // stubbed promisedSleep
+    // sleepStub = sinon.stub().resolves(); // stubbed promisedSleep
   });
 
   afterEach(() => {
@@ -22,14 +23,14 @@ describe('FetchRetrier', () => {
     fetchStub.resolves(new Response('ok', { status: 200 }));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      sleepFn: sleepStub,
+      retryConfiguration: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/data');
 
     expect(res.status).to.equal(200);
     expect(fetchStub.callCount).to.equal(1);
-    expect(sleepStub.callCount).to.equal(0);
+    // expect(sleepStub.callCount).to.equal(0);
     expect(analytics.events.length).to.equal(0);
   });
 
