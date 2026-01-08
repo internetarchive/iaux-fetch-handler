@@ -75,7 +75,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
     request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
-    let finalRequest = request;
+    let finalRequest = request.toString();
     const urlParams = new URLSearchParams(this.searchParams);
     if (urlParams.get('reCache') === '1') {
       finalRequest = this.addSearchParams(request, { reCache: '1' });
@@ -90,7 +90,7 @@ export class IaFetchHandler implements FetchHandlerInterface {
   private addSearchParams(
     request: RequestInfo,
     params: Record<string, string>,
-  ): RequestInfo {
+  ): string {
     const urlString = typeof request === 'string' ? request : request.url;
     const url = new URL(urlString, window.location.href);
 
@@ -98,11 +98,6 @@ export class IaFetchHandler implements FetchHandlerInterface {
       url.searchParams.set(key, value);
     }
 
-    if (typeof request === 'string') {
-      return url.href;
-    } else {
-      const newRequest = new Request(url.href, request);
-      return newRequest;
-    }
+    return url.href;
   }
 }

@@ -11,6 +11,8 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
 
   coverageConfig: { include: ['**/src/**'] },
 
+  testsFinishTimeout: 5000,
+
   /** Filter out lit dev mode logs */
   filterBrowserLogs(log) {
     for (const arg of log.args) {

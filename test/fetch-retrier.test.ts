@@ -166,4 +166,49 @@ describe('FetchRetrier', () => {
     expect(fetchStub.callCount).to.equal(3);
     expect(retryDelaySpy.callCount).to.equal(2);
   });
+
+  it('does not retry 5xx when NoRetryConfiguration is used', async () => {
+    fetchStub.resolves(new Response('server error', { status: 500 }));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      retryConfiguration: new (class {
+        shouldRetry() {
+          return false;
+        }
+        retryDelay() {
+          return 0;
+        }
+      })(),
+    });
+
+    const res = await retrier.fetchRetry('https://foo.org/no-retry-500');
+    expect(res.status).to.equal(500);
+    expect(fetchStub.callCount).to.equal(1);
+    expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
+  });
+
+  it('does not retry on error when configuration disables retries', async () => {
+    fetchStub.rejects(new Error('Immediate failure'));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      retryConfiguration: new (class {
+        shouldRetry() {
+          return false;
+        }
+        retryDelay() {
+          return 0;
+        }
+      })(),
+    });
+
+    try {
+      await retrier.fetchRetry('https://foo.org/no-retry-error');
+      throw new Error('Should have thrown');
+    } catch (err: unknown) {
+      expect((err as Error).message).to.equal('Immediate failure');
+    }
+
+    expect(fetchStub.callCount).to.equal(1);
+    expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
+  });
 });
