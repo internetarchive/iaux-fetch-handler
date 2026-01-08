@@ -1,4 +1,4 @@
-![Build Status](https://github.com/internetarchive/iaux-fetch-handler-service/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service/graph/badge.svg?token=ZOYRJ2BV9W)](https://codecov.io/gh/internetarchive/iaux-fetch-handler-service)
+![Build Status](https://github.com/internetarchive/iaux-fetch-handler/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/internetarchive/iaux-fetch-handler/graph/badge.svg?token=ZOYRJ2BV9W)](https://codecov.io/gh/internetarchive/iaux-fetch-handler)
 
 
 # Internet Archive Fetch Handler library
@@ -10,14 +10,14 @@ A custom library for handling API requests.
 ## Installation
 
 ```bash
-npm install @internetarchive/iaux-fetch-handler
+npm install @internetarchive/fetch-handler
 ```
 
 
 ## Sample Usage
 
 ```ts
-import { IaFetchHandler } from '../src/ia-fetch-handler';
+import { IaFetchHandler } from '@internetarchive/fetch-handler';
 
 @property({ type: Object }) data: any = null;
 @property({ type: String }) error: string = '';
