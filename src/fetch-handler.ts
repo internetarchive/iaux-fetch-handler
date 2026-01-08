@@ -75,10 +75,11 @@ export class IaFetchHandler implements FetchHandlerInterface {
     request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
-    let finalRequest = request.toString();
+    let finalRequest = request;
     const urlParams = new URLSearchParams(this.searchParams);
     if (urlParams.get('reCache') === '1') {
-      finalRequest = this.addSearchParams(request, { reCache: '1' });
+      const urlString = typeof request === 'string' ? request : request.url;
+      finalRequest = this.addSearchParams(urlString, { reCache: '1' });
     }
     return this.fetchRetrier.fetchRetry(finalRequest, options);
   }
@@ -88,10 +89,9 @@ export class IaFetchHandler implements FetchHandlerInterface {
    * the way we add search params to it depending on the input.
    */
   private addSearchParams(
-    request: RequestInfo,
+    urlString: string,
     params: Record<string, string>,
   ): string {
-    const urlString = typeof request === 'string' ? request : request.url;
     const url = new URL(urlString, window.location.href);
 
     for (const [key, value] of Object.entries(params)) {
