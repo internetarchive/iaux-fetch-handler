@@ -9,7 +9,7 @@ export interface FetchHandlerInterface {
    * @param options RequestInit | FetchOptions
    */
   fetch(
-    input: RequestInfo,
+    request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response>;
 
@@ -37,7 +37,7 @@ export interface FetchHandlerInterface {
    * of the full URL. If you need a full URL, use `fetchApiResponse` instead.
    *
    * @param path string
-   * @param options?: { includeCredentials?: boolean, shouldRetry?: boolean }
+   * @param options?: { includeCredentials?: boolean, retryConfig?: RetryConfiguring }
    */
   fetchIAApiResponse<T>(
     path: string,
