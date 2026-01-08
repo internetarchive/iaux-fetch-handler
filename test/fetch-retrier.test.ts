@@ -6,13 +6,11 @@ import { MockRetryConfig } from './mocks/mock-retry-config';
 
 describe('FetchRetrier', () => {
   let fetchStub: sinon.SinonStub;
-  // let sleepStub: sinon.SinonStub;
   let analytics: MockAnalyticsHandler;
 
   beforeEach(() => {
     analytics = new MockAnalyticsHandler();
     fetchStub = sinon.stub(globalThis, 'fetch');
-    // sleepStub = sinon.stub().resolves(); // stubbed promisedSleep
   });
 
   afterEach(() => {
@@ -30,7 +28,6 @@ describe('FetchRetrier', () => {
 
     expect(res.status).to.equal(200);
     expect(fetchStub.callCount).to.equal(1);
-    // expect(sleepStub.callCount).to.equal(0);
     expect(analytics.events.length).to.equal(0);
   });
 
@@ -67,8 +64,6 @@ describe('FetchRetrier', () => {
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
     });
-
-    // const apiRequestInit = { shouldRetry: true } as any;
 
     const res = await retrier.fetchRetry('https://foo.org/should-retry', {
       retryConfig: new MockRetryConfig(),
@@ -124,8 +119,8 @@ describe('FetchRetrier', () => {
     try {
       await retrier.fetchRetry('https://foo.org/networkfail');
       throw new Error('Should have thrown');
-    } catch (err: any) {
-      expect(err.message).to.equal('Boom');
+    } catch (err: unknown) {
+      expect((err as Error).message).to.equal('Boom');
     }
 
     expect(fetchStub.callCount).to.equal(3);
@@ -143,7 +138,7 @@ describe('FetchRetrier', () => {
     try {
       await retrier.fetchRetry('https://foo.org/blocked');
       throw new Error('Should have thrown');
-    } catch (err: any) {
+    } catch (err: unknown) {
       expect(err).to.equal(blockerError);
     }
 
