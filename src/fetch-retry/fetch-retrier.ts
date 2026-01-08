@@ -65,7 +65,7 @@ export class FetchRetrier implements FetchRetrierInterface {
 
       const retryConfig = options?.retryConfig ?? this.retryConfiguration;
       if (retryConfig.shouldRetry(response, retryNumber)) {
-        const delay = retryConfig.retryDelay(retryNumber);
+        const delay = retryConfig.retryDelay(retryNumber, response);
         await promisedSleep(delay);
         this.logRetryEvent(
           urlString,

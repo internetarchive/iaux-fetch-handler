@@ -31,4 +31,18 @@ describe('DefaultRetryConfiguration', () => {
     expect(config.retryDelay(1)).to.equal(1000);
     expect(config.retryDelay(2)).to.equal(2000);
   });
+
+  it('uses Retry-After header if present', async () => {
+    const config = new DefaultRetryConfiguration();
+    const headers = new Headers();
+    headers.append('Retry-After', '3');
+    const mockResponse = new Response(null, { status: 503, headers });
+    expect(config.retryDelay(0, mockResponse)).to.equal(3000);
+  });
+
+  it('caps retry delay at 10 seconds', async () => {
+    const config = new DefaultRetryConfiguration();
+    expect(config.retryDelay(10)).to.equal(10000);
+    expect(config.retryDelay(20)).to.equal(10000);
+  });
 });
