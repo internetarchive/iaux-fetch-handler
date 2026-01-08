@@ -13,23 +13,21 @@ describe('DefaultRetryConfiguration', () => {
     expect(config.shouldRetry(mockResponse, 3)).to.be.false;
   });
 
-  it('should retry on 5xx status codes', async () => {
-    const config = new DefaultRetryConfiguration();
-    const mockResponse = new Response(null, { status: 502 });
-    expect(config.shouldRetry(mockResponse, 1)).to.be.true;
+  it('should retry transient status codes', async () => {
+    const transientStatuses = [408, 429, 500, 502, 503, 504];
+    const config = new DefaultRetryConfiguration({
+      transientStatusCodes: new Set(transientStatuses),
+    });
+    for (const status of transientStatuses) {
+      const mockResponse = new Response(null, { status });
+      expect(config.shouldRetry(mockResponse, 1)).to.be.true;
+    }
   });
 
-  it('should not retry on non-5xx status codes', async () => {
+  it('should not retry non-transient status codes', async () => {
     const config = new DefaultRetryConfiguration();
     const mockResponse = new Response(null, { status: 404 });
     expect(config.shouldRetry(mockResponse, 1)).to.be.false;
-  });
-
-  it('has exponential backoff delay', async () => {
-    const config = new DefaultRetryConfiguration();
-    expect(config.retryDelay(0)).to.equal(500);
-    expect(config.retryDelay(1)).to.equal(1000);
-    expect(config.retryDelay(2)).to.equal(2000);
   });
 
   it('uses Retry-After header if present', async () => {
@@ -38,6 +36,13 @@ describe('DefaultRetryConfiguration', () => {
     headers.append('Retry-After', '3');
     const mockResponse = new Response(null, { status: 503, headers });
     expect(config.retryDelay(0, mockResponse)).to.equal(3000);
+  });
+
+  it('has exponential backoff delay', async () => {
+    const config = new DefaultRetryConfiguration();
+    expect(config.retryDelay(0)).to.equal(500);
+    expect(config.retryDelay(1)).to.equal(1000);
+    expect(config.retryDelay(2)).to.equal(2000);
   });
 
   it('caps retry delay at 10 seconds', async () => {

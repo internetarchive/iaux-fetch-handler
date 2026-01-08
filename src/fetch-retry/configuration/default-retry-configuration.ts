@@ -7,23 +7,33 @@ export class DefaultRetryConfiguration implements RetryConfiguring {
 
   private readonly maxRetries: Readonly<number> = 2;
 
-  constructor(options?: { maxRetries?: number }) {
+  constructor(options?: {
+    maxRetries?: number;
+    transientStatusCodes?: Set<number>;
+  }) {
     if (options?.maxRetries !== undefined) {
       this.maxRetries = options.maxRetries;
     }
+    if (options?.transientStatusCodes !== undefined) {
+      this.transientStatusCodes = options.transientStatusCodes;
+    }
   }
 
-  private readonly transient4xxStatusCodes: ReadonlySet<number> = new Set([
+  readonly transientStatusCodes: ReadonlySet<number> = new Set([
     408, // Request Timeout
     429, // Too Many Requests
+    500, // Internal Server Error
+    502, // Bad Gateway
+    503, // Service Unavailable
+    504, // Gateway Timeout
+    522, // Cloudflare Origin Server Connection Timed Out
   ]);
 
   shouldRetry(response: Response | null, retryNumber: number): boolean {
     if (response === null) return false;
     if (retryNumber > this.maxRetries) return false;
-    const is5xx = response.status >= 500 && response.status < 600;
-    const isTransient4xx = this.transient4xxStatusCodes.has(response.status);
-    return is5xx || isTransient4xx;
+    const isTransient = this.transientStatusCodes.has(response.status);
+    return isTransient;
   }
 
   retryDelay(retryNumber: number, response?: Response | null): Milliseconds {
