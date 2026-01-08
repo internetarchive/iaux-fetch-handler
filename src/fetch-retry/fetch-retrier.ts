@@ -131,8 +131,8 @@ export class FetchRetrier implements FetchRetrierInterface {
 
     this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
-      action: `status4xx5xxResponse`,
-      label: `http status ${status}, url: ${response.url}`,
+      action: `status${status}Response`,
+      label: `url: ${response.url}`,
     });
   }
 
