@@ -99,19 +99,6 @@ export class FetchRetrier implements FetchRetrierInterface {
     }
   }
 
-  //   private async handleRetry(request: RequestInfo,
-  //     retryNumber: number,
-  //     options?: FetchOptions,
-  // ): Promise<Response | undefined> {
-  //     const retryConfig = options?.retryConfig ?? this.retryConfiguration;
-  //     if (await retryConfig.shouldRetry(null, retryNumber)) {
-  //       const delay = retryConfig.retryDelay(retryNumber);
-  //       await promisedSleep(delay);
-  //       this.logRetryEvent(urlString, retryNumber, error, error);
-  //       return this.fetchRetryWithOptions(request, options);
-  //     }
-  //   }
-
   private isContentBlockerError(error: unknown): boolean {
     // all of the content blocker errors are `TypeError`
     if (!(error instanceof TypeError)) return false;
