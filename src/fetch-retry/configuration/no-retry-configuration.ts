@@ -1,12 +1,12 @@
 import type { RetryConfiguring } from './retry-configuring';
-import type { TimeInterval } from './time-interval';
+import type { Milliseconds } from './milliseconds';
 
 export class NoRetryConfiguration implements RetryConfiguring {
   shouldRetry(): boolean {
     return false;
   }
 
-  retryDelay(): TimeInterval {
+  retryDelay(): Milliseconds {
     return 0;
   }
 }

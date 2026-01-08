@@ -1,4 +1,4 @@
-import type { TimeInterval } from './time-interval';
+import type { Milliseconds } from './milliseconds';
 
 export interface RetryConfiguring {
   shouldRetry(
@@ -7,5 +7,5 @@ export interface RetryConfiguring {
     error?: unknown,
   ): boolean;
 
-  retryDelay(retryNumber: number): TimeInterval;
+  retryDelay(retryNumber: number): Milliseconds;
 }

@@ -1,5 +1,5 @@
 import type { RetryConfiguring } from './retry-configuring';
-import type { TimeInterval } from './time-interval';
+import type { Milliseconds } from './milliseconds';
 
 export class DefaultRetryConfiguration implements RetryConfiguring {
   private readonly maxRetries: Readonly<number> = 2;
@@ -16,7 +16,7 @@ export class DefaultRetryConfiguration implements RetryConfiguring {
     return response.status >= 500 && response.status < 600;
   }
 
-  retryDelay(retryNumber: number): TimeInterval {
+  retryDelay(retryNumber: number): Milliseconds {
     // Exponential backoff up to 10 seconds
     return Math.min(500 * 2 ** retryNumber, 10000);
   }
