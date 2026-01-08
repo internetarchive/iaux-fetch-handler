@@ -2,6 +2,9 @@ import type { RetryConfiguring } from './retry-configuring';
 import type { Milliseconds } from './milliseconds';
 
 export class DefaultRetryConfiguration implements RetryConfiguring {
+  static readonly shared: Readonly<RetryConfiguring> =
+    new DefaultRetryConfiguration();
+
   private readonly maxRetries: Readonly<number> = 2;
 
   constructor(options?: { maxRetries?: number }) {
