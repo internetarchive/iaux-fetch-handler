@@ -151,15 +151,19 @@ describe('FetchRetrier', () => {
   });
 
   it('sleeps for each retry attempt', async () => {
+    const retryConfig = new MockRetryConfig();
+    const retryDelaySpy = sinon.spy(retryConfig, 'retryDelay');
     fetchStub.resolves(new Response(null, { status: 500 }));
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new MockRetryConfig(),
+      retryConfiguration: retryConfig,
     });
 
     const res = await retrier.fetchRetry('https://foo.org/retry-fail');
 
     expect(res.status).to.equal(500);
+    expect(fetchStub.callCount).to.equal(3);
+    expect(retryDelaySpy.callCount).to.equal(2);
   });
 });
