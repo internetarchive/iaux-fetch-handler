@@ -1,5 +1,4 @@
 import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
-import { AnalyticsHandler } from '@internetarchive/analytics-manager';
 import { promisedSleep } from '../utils/promised-sleep';
 import {
   DefaultRetryConfiguration,
@@ -27,7 +26,7 @@ export interface FetchRetrierInterface {
 
 /** @inheritdoc */
 export class FetchRetrier implements FetchRetrierInterface {
-  private analyticsHandler = new AnalyticsHandler({ enableAnalytics: true });
+  private analyticsHandler?: AnalyticsHandlerInterface;
 
   private retryConfiguration: RetryConfiguring =
     new DefaultRetryConfiguration();
@@ -114,7 +113,7 @@ export class FetchRetrier implements FetchRetrierInterface {
     status: unknown,
     code: unknown,
   ) {
-    this.analyticsHandler.sendEvent({
+    this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
       action: 'retryingFetch',
       label: `retryNumber: ${retryNumber}, code: ${code}, status: ${status}, url: ${urlString}`,
@@ -122,7 +121,7 @@ export class FetchRetrier implements FetchRetrierInterface {
   }
 
   private logFailureEvent(urlString: string, error: unknown) {
-    this.analyticsHandler.sendEvent({
+    this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
       action: 'fetchFailed',
       label: `error: ${error}, url: ${urlString}`,
@@ -132,7 +131,7 @@ export class FetchRetrier implements FetchRetrierInterface {
   private log4xxResponse(response: Response) {
     const status = response.status;
 
-    this.analyticsHandler.sendEvent({
+    this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
       action: `status4xxResponse`,
       label: `http status ${status}, url: ${response.url}`,
@@ -140,7 +139,7 @@ export class FetchRetrier implements FetchRetrierInterface {
   }
 
   private logContentBlockingEvent(urlString: string, error: unknown) {
-    this.analyticsHandler.sendEvent({
+    this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
       action: 'contentBlockerDetectedNotRetrying',
       label: `error: ${error}, url: ${urlString}`,
