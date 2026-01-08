@@ -6,6 +6,7 @@ import {
   type RetryConfiguring,
 } from './fetch-retry-configuring';
 import { type FetchOptions } from '../fetch-options';
+import { legacyArgsAsFetchOptions } from './legacy-args';
 
 /**
  * A class that retries a fetch request.
@@ -46,20 +47,8 @@ export class FetchRetrier implements FetchRetrierInterface {
     request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
-    const fetchOptions = this.legacyArgsAsFetchOptions(options);
+    const fetchOptions = legacyArgsAsFetchOptions(options);
     return await this.fetchRetryWithOptions(request, 0, fetchOptions);
-  }
-
-  private legacyArgsAsFetchOptions(
-    options?: RequestInit | FetchOptions,
-  ): FetchOptions | undefined {
-    if (!options) return undefined;
-    // if options is already FetchOptions, return it
-    if ('requestInit' in options || 'retryConfig' in options) {
-      return options as FetchOptions;
-    }
-    // otherwise, it's RequestInit
-    return { requestInit: options as RequestInit };
   }
 
   private async fetchRetryWithOptions(
@@ -74,7 +63,7 @@ export class FetchRetrier implements FetchRetrierInterface {
       if (response.ok) return response;
 
       if (response.status >= 400 && response.status < 500) {
-        this.log40xResponse(response);
+        this.log4xxResponse(response);
       }
 
       const retryConfig = options?.retryConfig ?? this.retryConfiguration;
@@ -153,12 +142,12 @@ export class FetchRetrier implements FetchRetrierInterface {
     });
   }
 
-  private log40xResponse(response: Response) {
+  private log4xxResponse(response: Response) {
     const status = response.status;
 
     this.analyticsHandler.sendEvent({
       category: this.eventCategory,
-      action: `status40xResponse`,
+      action: `status4xxResponse`,
       label: `http status ${status}, url: ${response.url}`,
     });
   }
