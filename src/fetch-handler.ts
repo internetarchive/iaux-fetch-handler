@@ -39,6 +39,9 @@ export class IaFetchHandler implements FetchHandlerInterface {
     path: string,
     options?: {
       includeCredentials?: boolean;
+      method?: string;
+      body?: BodyInit;
+      headers?: HeadersInit;
       retryConfig?: RetryConfiguring;
     },
   ): Promise<T> {

@@ -37,10 +37,22 @@ export interface FetchHandlerInterface {
    * of the full URL. If you need a full URL, use `fetchApiResponse` instead.
    *
    * @param path string
-   * @param options?: { includeCredentials?: boolean, retryConfig?: RetryConfiguring }
+   * @param options?: {
+   *     includeCredentials?: boolean;
+   *     method?: string;
+   *     body?: BodyInit;
+   *     headers?: HeadersInit;
+   *     retryConfig?: RetryConfiguring;
+   *   }
    */
   fetchIAApiResponse<T>(
     path: string,
-    options?: { includeCredentials?: boolean; retryConfig?: RetryConfiguring },
+    options?: {
+      includeCredentials?: boolean;
+      method?: string;
+      body?: BodyInit;
+      headers?: HeadersInit;
+      retryConfig?: RetryConfiguring;
+    },
   ): Promise<T>;
 }
