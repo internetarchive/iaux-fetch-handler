@@ -1,7 +1,5 @@
 import { expect } from '@open-wc/testing';
 import { IaFetchHandler } from '../src/fetch-handler';
-import { FetchRetrierInterface } from '../src/fetch-retry/fetch-retrier';
-import type { FetchOptions } from '../src/fetch-options';
 import { MockFetchRetrier } from './mocks/mock-fetch-retrier';
 
 describe('Fetch Handler', () => {
