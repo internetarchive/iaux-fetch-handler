@@ -59,8 +59,8 @@ export class FetchRetrier implements FetchRetrierInterface {
       const response = await fetch(request, options?.requestInit);
       if (response.ok) return response;
 
-      if (response.status >= 400 && response.status < 500) {
-        this.log4xxResponse(response);
+      if (response.status >= 400 && response.status < 600) {
+        this.log4xx5xxResponse(response);
       }
 
       const retryConfig = options?.retryConfig ?? this.retryConfiguration;
@@ -126,12 +126,12 @@ export class FetchRetrier implements FetchRetrierInterface {
     });
   }
 
-  private log4xxResponse(response: Response) {
+  private log4xx5xxResponse(response: Response) {
     const status = response.status;
 
     this.analyticsHandler?.sendEvent({
       category: this.eventCategory,
-      action: `status4xxResponse`,
+      action: `status4xx5xxResponse`,
       label: `http status ${status}, url: ${response.url}`,
     });
   }

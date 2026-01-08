@@ -41,7 +41,7 @@ describe('FetchRetrier', () => {
 
     expect(res.status).to.equal(403);
     expect(fetchStub.callCount).to.equal(1);
-    expect(analytics.events[0].action).to.equal('status4xxResponse');
+    expect(analytics.events[0].action).to.equal('status4xx5xxResponse');
   });
 
   it('does not retry on 404 and logs event', async () => {
@@ -54,7 +54,7 @@ describe('FetchRetrier', () => {
 
     expect(res.status).to.equal(404);
     expect(fetchStub.callCount).to.equal(1);
-    expect(analytics.events[0].action).to.equal('status4xxResponse');
+    expect(analytics.events[0].action).to.equal('status4xx5xxResponse');
   });
 
   it('retries on 4xx if shouldRetry is true in ApiRequestInit', async () => {
