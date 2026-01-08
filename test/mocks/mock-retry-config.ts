@@ -1,4 +1,4 @@
-import type { RetryConfiguring } from '../../src/fetch-retry/fetch-retry-configuring';
+import type { RetryConfiguring } from '../../src/fetch-retry/configuration/retry-configuring';
 
 export class MockRetryConfig implements RetryConfiguring {
   mockRetryCount: number = 2;

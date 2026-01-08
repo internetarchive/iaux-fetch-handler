@@ -1,11 +1,9 @@
 import type { AnalyticsHandlerInterface } from '@internetarchive/analytics-manager';
 import { promisedSleep } from '../utils/promised-sleep';
-import {
-  DefaultRetryConfiguration,
-  type RetryConfiguring,
-} from './fetch-retry-configuring';
 import { type FetchOptions } from '../fetch-options';
 import { legacyArgsAsFetchOptions } from './legacy-args';
+import { DefaultRetryConfiguration } from './configuration/default-retry-configuration';
+import type { RetryConfiguring } from './configuration/retry-configuring';
 
 /**
  * A class that retries a fetch request.

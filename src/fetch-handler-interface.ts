@@ -1,5 +1,5 @@
 import type { FetchOptions } from './fetch-options';
-import type { RetryConfiguring } from './fetch-retry/fetch-retry-configuring';
+import type { RetryConfiguring } from './fetch-retry/configuration/retry-configuring';
 
 export interface FetchHandlerInterface {
   /**

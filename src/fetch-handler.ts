@@ -3,8 +3,8 @@ import {
   FetchRetrierInterface,
 } from './fetch-retry/fetch-retrier';
 import type { FetchHandlerInterface } from './fetch-handler-interface';
-import type { RetryConfiguring } from './fetch-retry/fetch-retry-configuring';
 import type { FetchOptions } from './fetch-options';
+import type { RetryConfiguring } from './fetch-retry/configuration/retry-configuring';
 
 /**
  * The FetchHandler adds some common helpers:
