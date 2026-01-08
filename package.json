@@ -1,5 +1,5 @@
 {
-  "name": "@internetarchive/iaux-fetch-handler",
+  "name": "@internetarchive/fetch-handler",
   "description": "A custom library for handling API requests",
   "repository": {
     "type": "git",
