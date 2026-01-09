@@ -40,7 +40,10 @@ export class DefaultRetryConfiguration implements RetryConfiguring {
     return isTransient;
   }
 
-  retryDelay(retryNumber: number, response?: Response | null): Milliseconds {
+  retryDelay(
+    retryNumber: number,
+    response?: Response | null,
+  ): Milliseconds | null {
     // If we have a Retry-After header, use that
     const retryAfter = response?.headers.get('Retry-After');
     if (retryAfter) {

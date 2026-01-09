@@ -64,16 +64,19 @@ export class FetchRetrier implements FetchRetrierInterface {
       }
 
       const retryConfig = options?.retryConfig ?? this.retryConfiguration;
-      if (retryConfig.shouldRetry(response, retryNumber)) {
-        const delay = retryConfig.retryDelay(retryNumber, response);
-        await promisedSleep(delay);
-        this.logRetryEvent(
-          urlString,
-          retryNumber,
-          response.statusText,
-          response.status,
-        );
-        return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+      const shouldRetry = retryConfig.shouldRetry(response, retryNumber);
+      if (shouldRetry) {
+        const retryDelay = retryConfig.retryDelay(retryNumber, response);
+        if (retryDelay !== null) {
+          await promisedSleep(retryDelay);
+          this.logRetryEvent(
+            urlString,
+            retryNumber,
+            response.statusText,
+            response.status,
+          );
+          return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+        }
       }
       this.logFailureEvent(urlString, response.status);
       return response;
@@ -85,11 +88,14 @@ export class FetchRetrier implements FetchRetrierInterface {
       }
 
       const retryConfig = options?.retryConfig ?? this.retryConfiguration;
-      if (retryConfig.shouldRetry(null, retryNumber)) {
-        const delay = retryConfig.retryDelay(retryNumber);
-        await promisedSleep(delay);
-        this.logRetryEvent(urlString, retryNumber, error, error);
-        return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+      const shouldRetry = retryConfig.shouldRetry(null, retryNumber);
+      if (shouldRetry) {
+        const retryDelay = retryConfig.retryDelay(retryNumber);
+        if (retryDelay !== null) {
+          await promisedSleep(retryDelay);
+          this.logRetryEvent(urlString, retryNumber, error, error);
+          return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+        }
       }
       this.logFailureEvent(urlString, error);
       throw error;

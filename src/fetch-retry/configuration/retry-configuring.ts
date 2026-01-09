@@ -7,5 +7,8 @@ export interface RetryConfiguring {
     error?: unknown,
   ): boolean;
 
-  retryDelay(retryNumber: number, response?: Response | null): Milliseconds;
+  retryDelay(
+    retryNumber: number,
+    response?: Response | null,
+  ): Milliseconds | null;
 }

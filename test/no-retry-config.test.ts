@@ -9,6 +9,6 @@ describe('NoRetryConfiguration', () => {
 
   it('has no delay', async () => {
     const config = new NoRetryConfiguration();
-    expect(config.retryDelay()).to.equal(Infinity);
+    expect(config.retryDelay()).to.be.null;
   });
 });
