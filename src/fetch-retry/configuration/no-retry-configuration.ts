@@ -13,6 +13,6 @@ export class NoRetryConfiguration implements RetryConfiguring {
   }
 
   retryDelay(): Milliseconds {
-    return 0;
+    return Infinity;
   }
 }
