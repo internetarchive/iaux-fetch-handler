@@ -1,6 +1,10 @@
 import type { RetryConfiguring } from './retry-configuring';
 import type { Milliseconds } from './milliseconds';
 
+/**
+ * A retry configuration that retries twice for transient errors
+ * with exponential retry delay as well as `Retry-After` header support.
+ */
 export class DefaultRetryConfiguration implements RetryConfiguring {
   static readonly shared: Readonly<RetryConfiguring> =
     new DefaultRetryConfiguration();
