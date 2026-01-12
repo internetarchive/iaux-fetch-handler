@@ -49,7 +49,7 @@ See the `demo` directory for a more detailed example.
 
 ## Configuring Retry
 
-You can customize how you'd like Fetch Handler to retry a request, both on a global level and per-request.
+You can customize how you'd like `FetchHandler` to retry a request, both globally and per-request.
 
 ### Basic Usage
 
@@ -69,8 +69,11 @@ const fetchHandler = new FetchHandler({
   fetchRetrier
 })
 
-// per-request: will not retry this request
-fetchHandler.fetch('https://foo.com/api', {
+// use default retry configuration
+await fetchHander.fetch('https://foo.com/api')
+
+// specify retry config per-request: will not retry this request
+await fetchHandler.fetch('https://foo.com/api', {
   retryConfig: FetchRetryConfig.noRetry
 })
 ```
@@ -107,10 +110,10 @@ class MyCustomRetryConfig implements RetryConfiguring {
   }
 }
 
-const retryConfig = new MyCustomRetryConfig();
-
-fetchHandler.fetch('https://foo.com/api', {
-  retryConfig: retryConfig
+const customRetryConfig = new MyCustomRetryConfig();
+// use your custom retry config on a request or globally
+await fetchHandler.fetch('https://foo.com/api', {
+  retryConfig: customRetryConfig
 })
 ```
 
