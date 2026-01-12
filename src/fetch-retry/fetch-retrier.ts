@@ -43,10 +43,10 @@ export class FetchRetrier implements FetchRetrierInterface {
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
     const fetchOptions = legacyArgsAsFetchOptions(options);
-    return await this.fetchRetryWithOptions(request, 0, fetchOptions);
+    return await this.doFetchRetry(request, 0, fetchOptions);
   }
 
-  private async fetchRetryWithOptions(
+  private async doFetchRetry(
     request: RequestInfo,
     retryNumber: number,
     options?: FetchOptions,
@@ -73,7 +73,7 @@ export class FetchRetrier implements FetchRetrierInterface {
             response.statusText,
             response.status,
           );
-          return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+          return this.doFetchRetry(request, retryNumber + 1, options);
         }
       }
       this.logFailureEvent(urlString, response.status);
@@ -92,7 +92,7 @@ export class FetchRetrier implements FetchRetrierInterface {
         if (retryDelay !== null) {
           await promisedSleep(retryDelay);
           this.logRetryEvent(urlString, retryNumber, error, error);
-          return this.fetchRetryWithOptions(request, retryNumber + 1, options);
+          return this.doFetchRetry(request, retryNumber + 1, options);
         }
       }
       this.logFailureEvent(urlString, error);
