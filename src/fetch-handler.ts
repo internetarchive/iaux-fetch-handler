@@ -131,5 +131,9 @@ export class FetchHandler implements FetchHandlerInterface {
   }
 }
 
-// Provides backwards compatibility for prior class name
+/**
+ * Backwards compatibility class
+ *
+ * @deprecated Use `FetchHandler` instead.
+ */
 export class IaFetchHandler extends FetchHandler {}
