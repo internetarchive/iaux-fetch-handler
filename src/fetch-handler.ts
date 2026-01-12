@@ -13,24 +13,52 @@ import type { RetryConfiguring } from './fetch-retry/configuration/retry-configu
  * - add convenience method for fetching/decoding an API response by just the path
  */
 export class FetchHandler implements FetchHandlerInterface {
-  private iaApiBaseUrl?: string;
+  private apiBaseUrl: string = '';
 
   private fetchRetrier: FetchRetrierInterface = new FetchRetrier();
 
   private searchParams?: string;
 
+  /**
+   *
+   * @param options {
+   *  iaApiBaseUrl - deprecated Use `apiBaseUrl` instead.
+   *  apiBaseUrl - The base URL for API requests for `fetchApiPathResponse`
+   *  fetchRetrier - FetchRetrier to use instead of the default
+   *  searchParams - Search params to check for `reCache=1` (defaults to current window location)
+   */
   constructor(options?: {
     iaApiBaseUrl?: string;
+    apiBaseUrl?: string;
     fetchRetrier?: FetchRetrierInterface;
     searchParams?: string;
   }) {
-    if (options?.iaApiBaseUrl) this.iaApiBaseUrl = options.iaApiBaseUrl;
+    if (options?.apiBaseUrl) {
+      this.apiBaseUrl = options.apiBaseUrl;
+    } else if (options?.iaApiBaseUrl) {
+      this.apiBaseUrl = options.iaApiBaseUrl;
+    }
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;
     if (options?.searchParams) {
       this.searchParams = options.searchParams;
     } else {
       this.searchParams = window.location.search;
     }
+  }
+
+  /** @inheritdoc */
+  async fetchApiPathResponse<T>(
+    path: string,
+    options?: {
+      includeCredentials?: boolean;
+      method?: string;
+      body?: BodyInit;
+      headers?: HeadersInit;
+      retryConfig?: RetryConfiguring;
+    },
+  ): Promise<T> {
+    const url = `${this.apiBaseUrl}${path}`;
+    return this.fetchApiResponse(url, options);
   }
 
   /** @inheritdoc */
@@ -44,8 +72,7 @@ export class FetchHandler implements FetchHandlerInterface {
       retryConfig?: RetryConfiguring;
     },
   ): Promise<T> {
-    const url = `${this.iaApiBaseUrl}${path}`;
-    return this.fetchApiResponse(url, options);
+    return this.fetchApiPathResponse(path, options);
   }
 
   /** @inheritdoc */

@@ -4,6 +4,7 @@ import { type FetchOptions } from '../fetch-options';
 import { legacyArgsAsFetchOptions } from './legacy-args';
 import { DefaultRetryConfiguration } from './configuration/default-retry-configuration';
 import type { RetryConfiguring } from './configuration/retry-configuring';
+import { FetchRetryConfig } from './configuration/configurations';
 
 /**
  * A class that retries a fetch request.
@@ -26,7 +27,7 @@ export interface FetchRetrierInterface {
 export class FetchRetrier implements FetchRetrierInterface {
   private analyticsHandler?: AnalyticsHandlerInterface;
 
-  private retryConfig: RetryConfiguring = new DefaultRetryConfiguration();
+  private retryConfig: RetryConfiguring = FetchRetryConfig.default;
 
   constructor(options?: {
     analyticsHandler?: AnalyticsHandlerInterface;

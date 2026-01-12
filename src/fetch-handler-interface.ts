@@ -36,14 +36,28 @@ export interface FetchHandlerInterface {
    * This allows you to just pass the path to the API and get the response instead
    * of the full URL. If you need a full URL, use `fetchApiResponse` instead.
    *
-   * @param path string
-   * @param options?: {
-   *     includeCredentials?: boolean;
-   *     method?: string;
-   *     body?: BodyInit;
-   *     headers?: HeadersInit;
-   *     retryConfig?: RetryConfiguring;
-   *   }
+   * ie `fetchApiPathResponse('/items/123')` will fetch from `https://archive.org/items/123`
+   *
+   * @param path - Path to API endpoint
+   * @param options - Options including credentials, method, body, headers, and retryConfig
+   */
+  fetchApiPathResponse<T>(
+    path: string,
+    options?: {
+      includeCredentials?: boolean;
+      method?: string;
+      body?: BodyInit;
+      headers?: HeadersInit;
+      retryConfig?: RetryConfiguring;
+    },
+  ): Promise<T>;
+
+  /**
+   * Fetch a response from the IA API by path
+   *
+   * @deprecated Use `fetchApiPathResponse` instead.
+   * @param path - Path to API endpoint
+   * @param options - Options including credentials, method, body, headers, and retryConfig
    */
   fetchIAApiResponse<T>(
     path: string,

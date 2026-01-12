@@ -26,7 +26,7 @@ import { FetchHandler } from '@internetarchive/fetch-handler';
 private fetchHandler: FetchHandler;
 
 this.fetchHandler = new FetchHandler({
-  iaApiBaseUrl: 'https://archive.org',
+  apiBaseUrl: 'https://archive.org',
 });
 
 
@@ -35,7 +35,7 @@ async fetchData() {
   this.error = '';
   try {
     const result =
-      await this.fetchHandler.fetchIAApiResponse('/metadata/goody');
+      await this.fetchHandler.fetchApiPathResponse('/metadata/goody');
     this.data = result;
   } catch (error) {
     this.error = `Error fetching data: ${error}`;

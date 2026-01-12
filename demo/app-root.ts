@@ -14,7 +14,7 @@ export class AppRoot extends LitElement {
   constructor() {
     super();
     this.fetchHandler = new FetchHandler({
-      iaApiBaseUrl: 'https://archive.org',
+      apiBaseUrl: 'https://archive.org',
     });
   }
 
@@ -28,7 +28,7 @@ export class AppRoot extends LitElement {
     this.error = '';
     try {
       const result =
-        await this.fetchHandler.fetchIAApiResponse('/metadata/goody');
+        await this.fetchHandler.fetchApiPathResponse('/metadata/goody');
       this.data = result;
     } catch (error) {
       this.error = `Error fetching data: ${error}`;
