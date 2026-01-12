@@ -47,6 +47,73 @@ async fetchData() {
 
 See the `demo` directory for a more detailed example.
 
+## Configuring Retry
+
+You can customize how you'd like Fetch Handler to retry a request, both on a global level and per-request.
+
+### Basic Usage
+
+There are two included configurations, `DefaultRetryConfiguration` and `NoRetryConfiguration`, which can be accessed via `FetchRetryConfig.default` and `FetchRetryConfig.noRetry`. `.default` (the default) will retry twice with exponential backoff delay and `.noRetry` will not retry.
+
+Example:
+
+```ts
+import { FetchHandler, FetchRetrier, FetchRetryConfig } from '@internetarchive/fetch-handler';
+
+// setting default: retry twice with exponential backoff delay
+const fetchRetrier = new FetchRetrier({
+  retryConfig: FetchRetryConfig.default
+})
+
+const fetchHandler = new FetchHandler({
+  fetchRetrier
+})
+
+// per-request: will not retry this request
+fetchHandler.fetch('https://foo.com/api', {
+  retryConfig: FetchRetryConfig.noRetry
+})
+```
+
+### Custom Retry Configuration
+
+Fetch retrying can be configured using a `RetryConfiguring` object. This interface has two methods:
+```ts
+interface RetryConfiguring {
+  shouldRetry(
+    response: Response | null,
+    retryNumber: number,
+    error?: unknown,
+  ): boolean;
+
+  retryDelay(
+    retryNumber: number,
+    response?: Response | null,
+  ): Milliseconds | null;
+}
+
+class MyCustomRetryConfig implements RetryConfiguring {
+  shouldRetry(
+    response: Response | null,
+    retryNumber: number
+  ): boolean {
+    if (response === null) return false;
+    if (retryNumber > 1) return false;
+    return response.status !== 404;
+  }
+
+  retryDelay(retryNumber: number): Milliseconds | null {
+    return 1000;
+  }
+}
+
+const retryConfig = new MyCustomRetryConfig();
+
+fetchHandler.fetch('https://foo.com/api', {
+  retryConfig: retryConfig
+})
+```
+
 ## Local Demo with `web-dev-server`
 Add `127.0.0.1 local.archive.org` to your `/etc/hosts` file
 
