@@ -21,7 +21,7 @@ describe('FetchRetrier', () => {
     fetchStub.resolves(new Response('ok', { status: 200 }));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new MockRetryConfig(),
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/data');
@@ -81,7 +81,7 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new MockRetryConfig(),
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/fail');
@@ -98,7 +98,7 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new MockRetryConfig(),
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/retry');
@@ -113,7 +113,7 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new MockRetryConfig(),
+      retryConfig: new MockRetryConfig(),
     });
 
     try {
@@ -157,7 +157,7 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: retryConfig,
+      retryConfig: retryConfig,
     });
 
     const res = await retrier.fetchRetry('https://foo.org/retry-fail');
@@ -171,7 +171,7 @@ describe('FetchRetrier', () => {
     fetchStub.resolves(new Response('server error', { status: 500 }));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new (class {
+      retryConfig: new (class {
         shouldRetry() {
           return false;
         }
@@ -191,7 +191,7 @@ describe('FetchRetrier', () => {
     fetchStub.rejects(new Error('Immediate failure'));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryConfiguration: new (class {
+      retryConfig: new (class {
         shouldRetry() {
           return false;
         }

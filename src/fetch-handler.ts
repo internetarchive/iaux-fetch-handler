@@ -23,7 +23,6 @@ export class FetchHandler implements FetchHandlerInterface {
     iaApiBaseUrl?: string;
     fetchRetrier?: FetchRetrierInterface;
     searchParams?: string;
-    defaultRetryConfiguration?: RetryConfiguring;
   }) {
     if (options?.iaApiBaseUrl) this.iaApiBaseUrl = options.iaApiBaseUrl;
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;

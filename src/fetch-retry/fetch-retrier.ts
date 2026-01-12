@@ -26,17 +26,15 @@ export interface FetchRetrierInterface {
 export class FetchRetrier implements FetchRetrierInterface {
   private analyticsHandler?: AnalyticsHandlerInterface;
 
-  private retryConfiguration: RetryConfiguring =
-    new DefaultRetryConfiguration();
+  private retryConfig: RetryConfiguring = new DefaultRetryConfiguration();
 
   constructor(options?: {
     analyticsHandler?: AnalyticsHandlerInterface;
-    retryConfiguration?: RetryConfiguring;
+    retryConfig?: RetryConfiguring;
   }) {
     if (options?.analyticsHandler)
       this.analyticsHandler = options.analyticsHandler;
-    if (options?.retryConfiguration)
-      this.retryConfiguration = options.retryConfiguration;
+    if (options?.retryConfig) this.retryConfig = options.retryConfig;
   }
 
   /** @inheritdoc */
@@ -63,7 +61,7 @@ export class FetchRetrier implements FetchRetrierInterface {
         this.log4xx5xxResponse(response);
       }
 
-      const retryConfig = options?.retryConfig ?? this.retryConfiguration;
+      const retryConfig = options?.retryConfig ?? this.retryConfig;
       const shouldRetry = retryConfig.shouldRetry(response, retryNumber);
       if (shouldRetry) {
         const retryDelay = retryConfig.retryDelay(retryNumber, response);
@@ -87,7 +85,7 @@ export class FetchRetrier implements FetchRetrierInterface {
         throw error;
       }
 
-      const retryConfig = options?.retryConfig ?? this.retryConfiguration;
+      const retryConfig = options?.retryConfig ?? this.retryConfig;
       const shouldRetry = retryConfig.shouldRetry(null, retryNumber);
       if (shouldRetry) {
         const retryDelay = retryConfig.retryDelay(retryNumber);

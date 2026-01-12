@@ -9,3 +9,4 @@ export { NoRetryConfiguration } from './src/fetch-retry/configuration/no-retry-c
 export type { RetryConfiguring } from './src/fetch-retry/configuration/retry-configuring';
 export type { FetchOptions } from './src/fetch-options';
 export { FetchRetryConfig } from './src/fetch-retry/configuration/configurations';
+export type { Milliseconds } from './src/fetch-retry/configuration/milliseconds';
