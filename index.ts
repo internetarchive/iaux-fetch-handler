@@ -1,4 +1,4 @@
-export { IaFetchHandler } from './src/fetch-handler';
+export { FetchHandler, IaFetchHandler } from './src/fetch-handler';
 export { FetchHandlerInterface } from './src/fetch-handler-interface';
 export {
   FetchRetrier,

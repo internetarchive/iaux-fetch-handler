@@ -1,7 +1,7 @@
 import { html, LitElement, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import { IaFetchHandler } from '../src/fetch-handler';
+import { FetchHandler } from '../src/fetch-handler';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
@@ -9,11 +9,11 @@ export class AppRoot extends LitElement {
   @property({ type: String }) error: string = '';
   @property({ type: Boolean }) loading: boolean = false;
 
-  private fetchHandler: IaFetchHandler;
+  private fetchHandler: FetchHandler;
 
   constructor() {
     super();
-    this.fetchHandler = new IaFetchHandler({
+    this.fetchHandler = new FetchHandler({
       iaApiBaseUrl: 'https://archive.org',
     });
   }

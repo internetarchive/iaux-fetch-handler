@@ -17,15 +17,15 @@ npm install @internetarchive/fetch-handler
 ## Sample Usage
 
 ```ts
-import { IaFetchHandler } from '@internetarchive/fetch-handler';
+import { FetchHandler } from '@internetarchive/fetch-handler';
 
 @property({ type: Object }) data: any = null;
 @property({ type: String }) error: string = '';
 @property({ type: Boolean }) loading: boolean = false;
 
-private fetchHandler: IaFetchHandler;
+private fetchHandler: FetchHandler;
 
-this.fetchHandler = new IaFetchHandler({
+this.fetchHandler = new FetchHandler({
   iaApiBaseUrl: 'https://archive.org',
 });
 
