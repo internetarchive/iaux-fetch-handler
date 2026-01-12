@@ -5,11 +5,7 @@ export class MockRetryConfig implements RetryConfiguring {
 
   mockRetryDelay: number = 0;
 
-  shouldRetry(
-    response: Response | null,
-    retryNumber: number,
-    error?: unknown,
-  ): boolean {
+  shouldRetry(response: Response | null, retryNumber: number): boolean {
     return retryNumber < this.mockRetryCount;
   }
 
