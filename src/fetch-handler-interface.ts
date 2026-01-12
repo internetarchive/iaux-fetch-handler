@@ -36,7 +36,7 @@ export interface FetchHandlerInterface {
    * This allows you to just pass the path to the API and get the response instead
    * of the full URL. If you need a full URL, use `fetchApiResponse` instead.
    *
-   * ie `fetchApiPathResponse('/items/123')` will fetch from `https://archive.org/items/123`
+   * ie `fetchApiPathResponse('/items/123')` will fetch from `${apiBaseUrl}/items/123`
    *
    * @param path - Path to API endpoint
    * @param options - Options including credentials, method, body, headers, and retryConfig
