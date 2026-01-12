@@ -5,7 +5,7 @@ import { FetchHandler } from '../src/fetch-handler';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
-  @property({ type: Object }) data: any = null;
+  @property({ type: Object }) data: unknown = null;
   @property({ type: String }) error: string = '';
   @property({ type: Boolean }) loading: boolean = false;
 
