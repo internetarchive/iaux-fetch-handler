@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing';
-import { FetchHandler } from '../src/fetch-handler';
+import { FetchHandler, IaFetchHandler } from '../src/fetch-handler';
 import { MockFetchRetrier } from './mocks/mock-fetch-retrier';
 import { NoRetryConfiguration } from '../src/fetch-retry/configuration/no-retry-configuration';
 
@@ -144,7 +144,32 @@ describe('Fetch Handler', () => {
     it('is an alias for fetchApiPathResponse', async () => {
       const endpoint = '/foo/service/endpoint.php';
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
+      const fetchHandler = new IaFetchHandler({
+        iaApiBaseUrl: 'www.example.com',
+        fetchRetrier: fetchRetrier,
+      });
+      await fetchHandler.fetchIAApiResponse(endpoint);
+      expect(fetchRetrier.requestInfo).to.equal(
+        'www.example.com/foo/service/endpoint.php',
+      );
+    });
+
+    it('defaults the baseUrl to https://archive.org', async () => {
+      const endpoint = '/foo/service/endpoint.php';
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new IaFetchHandler({
+        fetchRetrier: fetchRetrier,
+      });
+      await fetchHandler.fetchIAApiResponse(endpoint);
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://archive.org/foo/service/endpoint.php',
+      );
+    });
+
+    it('passes iaApiBaseUrl if provided', async () => {
+      const endpoint = '/foo/service/endpoint.php';
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new IaFetchHandler({
         iaApiBaseUrl: 'www.example.com',
         fetchRetrier: fetchRetrier,
       });

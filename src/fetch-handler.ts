@@ -136,4 +136,15 @@ export class FetchHandler implements FetchHandlerInterface {
  *
  * @deprecated Use `FetchHandler` instead.
  */
-export class IaFetchHandler extends FetchHandler {}
+export class IaFetchHandler extends FetchHandler {
+  constructor(options?: {
+    iaApiBaseUrl?: string;
+    apiBaseUrl?: string;
+    fetchRetrier?: FetchRetrierInterface;
+    searchParams?: string;
+  }) {
+    const superOptions = { ...options };
+    superOptions.iaApiBaseUrl = options?.iaApiBaseUrl ?? 'https://archive.org';
+    super(superOptions);
+  }
+}
