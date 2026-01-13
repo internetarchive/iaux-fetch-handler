@@ -5,7 +5,7 @@ import {
 import type { FetchHandlerInterface } from './fetch-handler-interface';
 import type { ApiFetchOptions, FetchOptions } from './fetch-options';
 
-type FetchHandlerConstructorOptions = {
+export type FetchHandlerConstructorOptions = {
   /** @deprecated Use `apiBaseUrl` instead. */
   iaApiBaseUrl?: string;
   apiBaseUrl?: string;

@@ -1,6 +1,10 @@
-export { FetchHandler, IaFetchHandler } from './src/fetch-handler';
+export {
+  FetchHandler,
+  IaFetchHandler,
+  type FetchHandlerConstructorOptions,
+} from './src/fetch-handler';
 export type { FetchHandlerInterface } from './src/fetch-handler-interface';
-export type { FetchOptions } from './src/fetch-options';
+export type { ApiFetchOptions, FetchOptions } from './src/fetch-options';
 export type { Milliseconds } from './src/fetch-retry/configuration/milliseconds';
 
 export { FetchRetryConfig } from './src/fetch-retry/configuration/configurations';
