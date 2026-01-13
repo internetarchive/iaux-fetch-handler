@@ -1,5 +1,4 @@
-import type { FetchOptions } from './fetch-options';
-import type { RetryConfiguring } from './fetch-retry/configuration/retry-configuring';
+import type { ApiFetchOptions, FetchOptions } from './fetch-options';
 
 export interface FetchHandlerInterface {
   /**
@@ -17,18 +16,9 @@ export interface FetchHandlerInterface {
    * A helper function to fetch a response from an API and get a JSON object
    *
    * @param path string
-   * @param options?: { includeCredentials?: boolean }
+   * @param options?: ApiFetchOptions
    */
-  fetchApiResponse<T>(
-    url: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T>;
+  fetchApiResponse<T>(url: string, options?: ApiFetchOptions): Promise<T>;
 
   /**
    * A helper function to fetch a response from the IA API and get a JSON object
@@ -39,34 +29,16 @@ export interface FetchHandlerInterface {
    * ie `fetchApiPathResponse('/items/123')` will fetch from `${apiBaseUrl}/items/123`
    *
    * @param path - Path to API endpoint
-   * @param options - Options including credentials, method, body, headers, and retryConfig
+   * @param options - ApiFetchOptions
    */
-  fetchApiPathResponse<T>(
-    path: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T>;
+  fetchApiPathResponse<T>(path: string, options?: ApiFetchOptions): Promise<T>;
 
   /**
    * Fetch a response from the IA API by path
    *
    * @deprecated Use `fetchApiPathResponse` instead.
    * @param path - Path to API endpoint
-   * @param options - Options including credentials, method, body, headers, and retryConfig
+   * @param options - ApiFetchOptions
    */
-  fetchIAApiResponse<T>(
-    path: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T>;
+  fetchIAApiResponse<T>(path: string, options?: ApiFetchOptions): Promise<T>;
 }

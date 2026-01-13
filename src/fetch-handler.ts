@@ -3,8 +3,15 @@ import {
   FetchRetrierInterface,
 } from './fetch-retry/fetch-retrier';
 import type { FetchHandlerInterface } from './fetch-handler-interface';
-import type { FetchOptions } from './fetch-options';
-import type { RetryConfiguring } from './fetch-retry/configuration/retry-configuring';
+import type { ApiFetchOptions, FetchOptions } from './fetch-options';
+
+type FetchHandlerConstructorOptions = {
+  /** @deprecated Use `apiBaseUrl` instead. */
+  iaApiBaseUrl?: string;
+  apiBaseUrl?: string;
+  fetchRetrier?: FetchRetrierInterface;
+  searchParams?: string;
+};
 
 /**
  * The FetchHandler adds some common helpers:
@@ -19,20 +26,7 @@ export class FetchHandler implements FetchHandlerInterface {
 
   private searchParams?: string;
 
-  /**
-   *
-   * @param options {
-   *  iaApiBaseUrl - deprecated Use `apiBaseUrl` instead.
-   *  apiBaseUrl - The base URL for API requests for `fetchApiPathResponse`
-   *  fetchRetrier - FetchRetrier to use instead of the default
-   *  searchParams - Search params to check for `reCache=1` (defaults to current window location)
-   */
-  constructor(options?: {
-    iaApiBaseUrl?: string;
-    apiBaseUrl?: string;
-    fetchRetrier?: FetchRetrierInterface;
-    searchParams?: string;
-  }) {
+  constructor(options?: FetchHandlerConstructorOptions) {
     if (options?.apiBaseUrl) {
       this.apiBaseUrl = options.apiBaseUrl;
     } else if (options?.iaApiBaseUrl) {
@@ -44,59 +38,6 @@ export class FetchHandler implements FetchHandlerInterface {
     } else {
       this.searchParams = window.location.search;
     }
-  }
-
-  /** @inheritdoc */
-  async fetchApiPathResponse<T>(
-    path: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T> {
-    const url = `${this.apiBaseUrl}${path}`;
-    return this.fetchApiResponse(url, options);
-  }
-
-  /** @inheritdoc */
-  async fetchIAApiResponse<T>(
-    path: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T> {
-    return this.fetchApiPathResponse(path, options);
-  }
-
-  /** @inheritdoc */
-  async fetchApiResponse<T>(
-    url: string,
-    options?: {
-      includeCredentials?: boolean;
-      method?: string;
-      body?: BodyInit;
-      headers?: HeadersInit;
-      retryConfig?: RetryConfiguring;
-    },
-  ): Promise<T> {
-    const requestInit: RequestInit = {};
-    if (options?.includeCredentials) requestInit.credentials = 'include';
-    if (options?.method) requestInit.method = options.method;
-    if (options?.body) requestInit.body = options.body;
-    if (options?.headers) requestInit.headers = options.headers;
-    const response = await this.fetch(url, {
-      requestInit: requestInit,
-      retryConfig: options?.retryConfig,
-    });
-    const json = await response.json();
-    return json as T;
   }
 
   /** @inheritdoc */
@@ -113,9 +54,47 @@ export class FetchHandler implements FetchHandlerInterface {
     return this.fetchRetrier.fetchRetry(finalRequest, options);
   }
 
+  /** @inheritdoc */
+  async fetchApiResponse<T>(
+    url: string,
+    options?: ApiFetchOptions,
+  ): Promise<T> {
+    const requestInit: RequestInit = {};
+    if (options?.includeCredentials) requestInit.credentials = 'include';
+    if (options?.method) requestInit.method = options.method;
+    if (options?.body) requestInit.body = options.body;
+    if (options?.headers) requestInit.headers = options.headers;
+    const response = await this.fetch(url, {
+      requestInit: requestInit,
+      retryConfig: options?.retryConfig,
+    });
+    const json = await response.json();
+    return json as T;
+  }
+
+  /** @inheritdoc */
+  async fetchApiPathResponse<T>(
+    path: string,
+    options?: ApiFetchOptions,
+  ): Promise<T> {
+    const url = `${this.apiBaseUrl}${path}`;
+    return this.fetchApiResponse(url, options);
+  }
+
+  /** @inheritdoc */
+  async fetchIAApiResponse<T>(
+    path: string,
+    options?: ApiFetchOptions,
+  ): Promise<T> {
+    return this.fetchApiPathResponse(path, options);
+  }
+
   /**
-   * Since RequestInfo can be either a `Request` or `string`, we need to change
-   * the way we add search params to it depending on the input.
+   * Construct a new URL with the given search params added
+   *
+   * @param urlString - Original URL string
+   * @param params - Params to add
+   * @returns New URL string with params added
    */
   private addSearchParams(
     urlString: string,
