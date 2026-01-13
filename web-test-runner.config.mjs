@@ -7,9 +7,11 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
   files: 'dist/test/**/*.test.js',
 
   /** Resolve bare module imports */
-  nodeResolve: {
-    exportConditions: ['browser', 'development'],
-  },
+  nodeResolve: { exportConditions: ['browser', 'development'] },
+
+  coverageConfig: { include: ['**/src/**'] },
+
+  testsFinishTimeout: 5000,
 
   /** Filter out lit dev mode logs */
   filterBrowserLogs(log) {

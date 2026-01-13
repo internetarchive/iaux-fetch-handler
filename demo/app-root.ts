@@ -1,20 +1,20 @@
 import { html, LitElement, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
-import { IaFetchHandler } from '../src/ia-fetch-handler';
+import { FetchHandler } from '../src/fetch-handler';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
-  @property({ type: Object }) data: any = null;
+  @property({ type: Object }) data: unknown = null;
   @property({ type: String }) error: string = '';
   @property({ type: Boolean }) loading: boolean = false;
 
-  private fetchHandler: IaFetchHandler;
+  private fetchHandler: FetchHandler;
 
   constructor() {
     super();
-    this.fetchHandler = new IaFetchHandler({
-      iaApiBaseUrl: 'https://archive.org',
+    this.fetchHandler = new FetchHandler({
+      apiBaseUrl: 'https://archive.org',
     });
   }
 
@@ -28,7 +28,7 @@ export class AppRoot extends LitElement {
     this.error = '';
     try {
       const result =
-        await this.fetchHandler.fetchIAApiResponse('/metadata/goody');
+        await this.fetchHandler.fetchApiPathResponse('/metadata/goody');
       this.data = result;
     } catch (error) {
       this.error = `Error fetching data: ${error}`;

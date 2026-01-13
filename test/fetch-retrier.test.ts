@@ -1,17 +1,16 @@
 import { expect } from '@open-wc/testing';
 import sinon from 'sinon';
-import { FetchRetrier } from '../src/utils/fetch-retrier';
+import { FetchRetrier } from '../src/fetch-retry/fetch-retrier';
 import { MockAnalyticsHandler } from './mocks/mock-analytics-handler';
+import { MockRetryConfig } from './mocks/mock-retry-config';
 
 describe('FetchRetrier', () => {
   let fetchStub: sinon.SinonStub;
-  let sleepStub: sinon.SinonStub;
   let analytics: MockAnalyticsHandler;
 
   beforeEach(() => {
     analytics = new MockAnalyticsHandler();
     fetchStub = sinon.stub(globalThis, 'fetch');
-    sleepStub = sinon.stub().resolves(); // stubbed promisedSleep
   });
 
   afterEach(() => {
@@ -22,30 +21,57 @@ describe('FetchRetrier', () => {
     fetchStub.resolves(new Response('ok', { status: 200 }));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      sleepFn: sleepStub,
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/data');
 
     expect(res.status).to.equal(200);
     expect(fetchStub.callCount).to.equal(1);
-    expect(sleepStub.callCount).to.equal(0);
     expect(analytics.events.length).to.equal(0);
+  });
+
+  it('does not retry on 4xx and logs event', async () => {
+    fetchStub.resolves(new Response('forbidden', { status: 403 }));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+    });
+
+    const res = await retrier.fetchRetry('https://foo.org/403');
+
+    expect(res.status).to.equal(403);
+    expect(fetchStub.callCount).to.equal(1);
+    expect(analytics.events[0].action).to.equal('status403Response');
   });
 
   it('does not retry on 404 and logs event', async () => {
     fetchStub.resolves(new Response('not found', { status: 404 }));
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      sleepFn: sleepStub,
     });
 
     const res = await retrier.fetchRetry('https://foo.org/404');
 
     expect(res.status).to.equal(404);
     expect(fetchStub.callCount).to.equal(1);
-    expect(sleepStub.callCount).to.equal(0);
-    expect(analytics.events[0].action).to.equal('status404NotRetrying');
+    expect(analytics.events[0].action).to.equal('status404Response');
+  });
+
+  it('retries on 4xx if shouldRetry is true in ApiRequestInit', async () => {
+    fetchStub.onCall(0).resolves(new Response('bad request', { status: 400 }));
+    fetchStub.onCall(1).resolves(new Response('ok', { status: 200 }));
+
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+    });
+
+    const res = await retrier.fetchRetry('https://foo.org/should-retry', {
+      retryConfig: new MockRetryConfig(),
+    });
+
+    expect(res.status).to.equal(200);
+    expect(fetchStub.callCount).to.equal(2);
+    expect(analytics.events.some(e => e.action === 'retryingFetch')).to.be.true;
   });
 
   it('retries on 500 and logs retry/failure events', async () => {
@@ -55,16 +81,13 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryCount: 2,
-      retryDelay: 1,
-      sleepFn: sleepStub,
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/fail');
 
     expect(res.status).to.equal(500);
     expect(fetchStub.callCount).to.equal(3);
-    expect(sleepStub.callCount).to.equal(2);
     expect(analytics.events.some(e => e.action === 'retryingFetch')).to.be.true;
     expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
   });
@@ -75,16 +98,13 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryCount: 1,
-      retryDelay: 1,
-      sleepFn: sleepStub,
+      retryConfig: new MockRetryConfig(),
     });
 
     const res = await retrier.fetchRetry('https://foo.org/retry');
 
     expect(res.status).to.equal(200);
     expect(fetchStub.callCount).to.equal(2);
-    expect(sleepStub.calledOnce).to.be.true;
     expect(analytics.events.some(e => e.action === 'retryingFetch')).to.be.true;
   });
 
@@ -93,20 +113,17 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryCount: 1,
-      retryDelay: 1,
-      sleepFn: sleepStub,
+      retryConfig: new MockRetryConfig(),
     });
 
     try {
       await retrier.fetchRetry('https://foo.org/networkfail');
       throw new Error('Should have thrown');
-    } catch (err: any) {
-      expect(err.message).to.equal('Boom');
+    } catch (err: unknown) {
+      expect((err as Error).message).to.equal('Boom');
     }
 
-    expect(fetchStub.callCount).to.equal(2);
-    expect(sleepStub.callCount).to.equal(1);
+    expect(fetchStub.callCount).to.equal(3);
     expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
   });
 
@@ -116,19 +133,16 @@ describe('FetchRetrier', () => {
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryCount: 2,
-      sleepFn: sleepStub,
     });
 
     try {
       await retrier.fetchRetry('https://foo.org/blocked');
       throw new Error('Should have thrown');
-    } catch (err: any) {
+    } catch (err: unknown) {
       expect(err).to.equal(blockerError);
     }
 
     expect(fetchStub.callCount).to.equal(1);
-    expect(sleepStub.callCount).to.equal(0);
     expect(
       analytics.events.some(
         e => e.action === 'contentBlockerDetectedNotRetrying',
@@ -136,38 +150,65 @@ describe('FetchRetrier', () => {
     ).to.be.true;
   });
 
-  it('calls sleepFn on retry with correct delay', async () => {
-    fetchStub.onCall(0).resolves(new Response(null, { status: 500 }));
-    fetchStub.onCall(1).resolves(new Response('ok', { status: 200 }));
-
-    const retrier = new FetchRetrier({
-      analyticsHandler: analytics,
-      retryCount: 2,
-      retryDelay: 1234,
-      sleepFn: sleepStub,
-    });
-
-    const res = await retrier.fetchRetry('https://foo.org/retry-with-sleep');
-
-    expect(res.status).to.equal(200);
-    expect(sleepStub.calledOnce).to.be.true;
-    expect(sleepStub.calledWith(1234)).to.be.true;
-  });
-
   it('sleeps for each retry attempt', async () => {
+    const retryConfig = new MockRetryConfig();
+    const retryDelaySpy = sinon.spy(retryConfig, 'retryDelay');
     fetchStub.resolves(new Response(null, { status: 500 }));
 
     const retrier = new FetchRetrier({
       analyticsHandler: analytics,
-      retryCount: 2,
-      retryDelay: 300,
-      sleepFn: sleepStub,
+      retryConfig: retryConfig,
     });
 
     const res = await retrier.fetchRetry('https://foo.org/retry-fail');
 
     expect(res.status).to.equal(500);
-    expect(sleepStub.callCount).to.equal(2);
-    expect(sleepStub.alwaysCalledWith(300)).to.be.true;
+    expect(fetchStub.callCount).to.equal(3);
+    expect(retryDelaySpy.callCount).to.equal(2);
+  });
+
+  it('does not retry 5xx when NoRetryConfiguration is used', async () => {
+    fetchStub.resolves(new Response('server error', { status: 500 }));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      retryConfig: new (class {
+        shouldRetry() {
+          return false;
+        }
+        retryDelay() {
+          return 0;
+        }
+      })(),
+    });
+
+    const res = await retrier.fetchRetry('https://foo.org/no-retry-500');
+    expect(res.status).to.equal(500);
+    expect(fetchStub.callCount).to.equal(1);
+    expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
+  });
+
+  it('does not retry on error when configuration disables retries', async () => {
+    fetchStub.rejects(new Error('Immediate failure'));
+    const retrier = new FetchRetrier({
+      analyticsHandler: analytics,
+      retryConfig: new (class {
+        shouldRetry() {
+          return false;
+        }
+        retryDelay() {
+          return 0;
+        }
+      })(),
+    });
+
+    try {
+      await retrier.fetchRetry('https://foo.org/no-retry-error');
+      throw new Error('Should have thrown');
+    } catch (err: unknown) {
+      expect((err as Error).message).to.equal('Immediate failure');
+    }
+
+    expect(fetchStub.callCount).to.equal(1);
+    expect(analytics.events.some(e => e.action === 'fetchFailed')).to.be.true;
   });
 });
