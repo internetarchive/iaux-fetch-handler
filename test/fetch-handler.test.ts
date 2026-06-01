@@ -110,7 +110,7 @@ describe('Fetch Handler', () => {
       await fetchHandler.fetchApiResponse(endpoint, {
         includeCredentials: true,
       });
-      expect(fetchRetrier.init).to.deep.equal({ credentials: 'include' });
+      expect(fetchRetrier.init?.credentials).to.equal('include');
     });
 
     it('passes method, body, and headers to RequestInit', async () => {
@@ -122,11 +122,40 @@ describe('Fetch Handler', () => {
         body,
         headers: { 'x-test': '1', 'content-type': 'application/json' },
       });
-      expect(fetchRetrier.init).to.deep.equal({
-        method: 'POST',
-        body,
-        headers: { 'x-test': '1', 'content-type': 'application/json' },
+      expect(fetchRetrier.init?.method).to.equal('POST');
+      expect(fetchRetrier.init?.body).to.equal(body);
+      const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.get('x-test')).to.equal('1');
+      expect(headers.get('content-type')).to.equal('application/json');
+    });
+
+    it('sends Accept: application/json by default', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api');
+      const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.get('accept')).to.equal('application/json');
+    });
+
+    it('still sends Accept: application/json when caller supplies other headers', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        headers: { 'x-test': '1' },
       });
+      const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.get('accept')).to.equal('application/json');
+      expect(headers.get('x-test')).to.equal('1');
+    });
+
+    it('lets caller override the default Accept header', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        headers: { Accept: 'text/plain' },
+      });
+      const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.get('accept')).to.equal('text/plain');
     });
 
     it('passes retryConfig through to retrier', async () => {
