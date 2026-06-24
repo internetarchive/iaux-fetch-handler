@@ -12,6 +12,15 @@ on:
       - synchronize
       - closed
 
+# The default GITHUB_TOKEN is read-only, which makes the preview steps below
+# fail: pr-preview-action can't push to the gh-pages branch and
+# sticky-pull-request-comment can't post the preview comment. Grant the writes
+# they need. (Note: PRs opened from forks still receive a read-only token
+# regardless of this block, by GitHub's design.)
+permissions:
+  contents: write        # pr-preview-action pushes the built preview to gh-pages
+  pull-requests: write   # sticky-pull-request-comment posts/updates the PR comment
+
 concurrency: preview-${{ github.ref }}
 
 env:
