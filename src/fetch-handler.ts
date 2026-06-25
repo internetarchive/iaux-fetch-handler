@@ -63,7 +63,13 @@ export class FetchHandler implements FetchHandlerInterface {
     if (options?.includeCredentials) requestInit.credentials = 'include';
     if (options?.method) requestInit.method = options.method;
     if (options?.body) requestInit.body = options.body;
-    if (options?.headers) requestInit.headers = options.headers;
+    const headers = new Headers({ Accept: 'application/json' });
+    if (options?.headers) {
+      new Headers(options.headers).forEach((value, key) => {
+        headers.set(key, value);
+      });
+    }
+    requestInit.headers = headers;
     const response = await this.fetch(url, {
       requestInit: requestInit,
       retryConfig: options?.retryConfig,
