@@ -117,6 +117,28 @@ await fetchHandler.fetch('https://foo.com/api', {
 })
 ```
 
+## CSRF Tokens
+
+`FetchHandler` can automatically attach an `X-CSRF-Token` header to `POST`, `PUT`, and `DELETE` requests. Provide a `getCsrfToken` function when constructing the handler; if omitted, behavior is unchanged (no header is added).
+
+```ts
+const fetchHandler = new FetchHandler({
+  apiBaseUrl: 'https://archive.org',
+  getCsrfToken: async () => {
+    const { token } = await fetch('/services/csrf-token').then(r => r.json());
+    return token;
+  },
+});
+
+// automatically sends the X-CSRF-Token header — no need to include it in the body
+await fetchHandler.fetchApiPathResponse('/favorites/add', {
+  method: 'POST',
+  body: JSON.stringify({ identifier: 'goody' }),
+});
+```
+
+If a caller already sets an `X-CSRF-Token` header explicitly, it's left as-is.
+
 ## Local Demo with `web-dev-server`
 Add `127.0.0.1 local.archive.org` to your `/etc/hosts` file
 
