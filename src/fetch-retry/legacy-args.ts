@@ -5,7 +5,11 @@ export const legacyArgsAsFetchOptions = (
 ): FetchOptions | undefined => {
   if (!options) return undefined;
   // if options is already FetchOptions, return it
-  if ('requestInit' in options || 'retryConfig' in options) {
+  if (
+    'requestInit' in options ||
+    'retryConfig' in options ||
+    'requireCsrfToken' in options
+  ) {
     return options as FetchOptions;
   }
   // otherwise, it's RequestInit

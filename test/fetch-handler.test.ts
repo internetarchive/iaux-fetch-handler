@@ -174,13 +174,14 @@ describe('Fetch Handler', () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({ fetchRetrier });
       await fetchHandler.fetch('https://foo.org/api', {
-        method: 'POST',
+        requestInit: { method: 'POST' },
+        requireCsrfToken: true,
       });
       const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.has('X-CSRF-Token')).to.be.false;
     });
 
-    it('attaches the token on POST requests', async () => {
+    it('does not attach a header on POST requests unless requireCsrfToken is set', async () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({
         fetchRetrier,
@@ -188,34 +189,56 @@ describe('Fetch Handler', () => {
       });
       await fetchHandler.fetch('https://foo.org/api', { method: 'POST' });
       const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.has('X-CSRF-Token')).to.be.false;
+    });
+
+    it('attaches the token on POST requests that opt in with requireCsrfToken', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        getCsrfToken: async () => 'my-token',
+      });
+      await fetchHandler.fetch('https://foo.org/api', {
+        requestInit: { method: 'POST' },
+        requireCsrfToken: true,
+      });
+      const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.get('X-CSRF-Token')).to.equal('my-token');
     });
 
-    it('attaches the token on PUT and DELETE requests', async () => {
+    it('attaches the token on PUT and DELETE requests that opt in', async () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({
         fetchRetrier,
         getCsrfToken: async () => 'my-token',
       });
 
-      await fetchHandler.fetch('https://foo.org/api', { method: 'PUT' });
+      await fetchHandler.fetch('https://foo.org/api', {
+        requestInit: { method: 'PUT' },
+        requireCsrfToken: true,
+      });
       expect(
         new Headers(fetchRetrier.init?.headers).get('X-CSRF-Token'),
       ).to.equal('my-token');
 
-      await fetchHandler.fetch('https://foo.org/api', { method: 'DELETE' });
+      await fetchHandler.fetch('https://foo.org/api', {
+        requestInit: { method: 'DELETE' },
+        requireCsrfToken: true,
+      });
       expect(
         new Headers(fetchRetrier.init?.headers).get('X-CSRF-Token'),
       ).to.equal('my-token');
     });
 
-    it('does not attach the token on GET requests', async () => {
+    it('does not attach the token on GET requests even if opted in', async () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({
         fetchRetrier,
         getCsrfToken: async () => 'my-token',
       });
-      await fetchHandler.fetch('https://foo.org/api');
+      await fetchHandler.fetch('https://foo.org/api', {
+        requireCsrfToken: true,
+      });
       const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.has('X-CSRF-Token')).to.be.false;
     });
@@ -227,7 +250,7 @@ describe('Fetch Handler', () => {
         getCsrfToken: async () => 'my-token',
       });
       const req = new Request('https://foo.org/api', { method: 'POST' });
-      await fetchHandler.fetch(req);
+      await fetchHandler.fetch(req, { requireCsrfToken: true });
       const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.get('X-CSRF-Token')).to.equal('my-token');
     });
@@ -239,14 +262,17 @@ describe('Fetch Handler', () => {
         getCsrfToken: async () => 'auto-token',
       });
       await fetchHandler.fetch('https://foo.org/api', {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': 'manual-token' },
+        requestInit: {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': 'manual-token' },
+        },
+        requireCsrfToken: true,
       });
       const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.get('X-CSRF-Token')).to.equal('manual-token');
     });
 
-    it('is attached via fetchApiResponse for POST requests', async () => {
+    it('does not attach via fetchApiResponse unless requireCsrfToken is set', async () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({
         fetchRetrier,
@@ -257,17 +283,35 @@ describe('Fetch Handler', () => {
         body: JSON.stringify({ hello: 'world' }),
       });
       const headers = new Headers(fetchRetrier.init?.headers);
+      expect(headers.has('X-CSRF-Token')).to.be.false;
+    });
+
+    it('is attached via fetchApiResponse for POST requests that opt in', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        getCsrfToken: async () => 'my-token',
+      });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        method: 'POST',
+        body: JSON.stringify({ hello: 'world' }),
+        requireCsrfToken: true,
+      });
+      const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.get('X-CSRF-Token')).to.equal('my-token');
     });
 
-    it('is attached via fetchApiPathResponse for POST requests', async () => {
+    it('is attached via fetchApiPathResponse for POST requests that opt in', async () => {
       const fetchRetrier = new MockFetchRetrier();
       const fetchHandler = new FetchHandler({
         apiBaseUrl: 'https://example.org',
         fetchRetrier,
         getCsrfToken: async () => 'my-token',
       });
-      await fetchHandler.fetchApiPathResponse('/api', { method: 'POST' });
+      await fetchHandler.fetchApiPathResponse('/api', {
+        method: 'POST',
+        requireCsrfToken: true,
+      });
       const headers = new Headers(fetchRetrier.init?.headers);
       expect(headers.get('X-CSRF-Token')).to.equal('my-token');
     });
@@ -279,9 +323,12 @@ describe('Fetch Handler', () => {
         getCsrfToken: async () => 'my-token',
       });
       await fetchHandler.fetch('https://foo.org/api', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'x-test': '1' },
+        requestInit: {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'x-test': '1' },
+        },
+        requireCsrfToken: true,
       });
       expect(fetchRetrier.init?.credentials).to.equal('include');
       const headers = new Headers(fetchRetrier.init?.headers);
