@@ -372,331 +372,351 @@ export class CsrfDemo extends LitElement {
         for a given scenario.
       </p>
 
-      <section>
-        <h2>Scenario checklist</h2>
-        <button @click=${this.runAllScenarios}>Run all</button>
-        <table>
-          <thead>
-            <tr>
-              <th>Scenario</th>
-              <th>Run</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${SCENARIOS.map((scenario, index) => {
-              const result = this.scenarioResults[index];
-              return html`
+      <div class="demo-columns">
+        <div class="demo-column">
+          <section>
+            <h2>Scenario checklist</h2>
+            <button @click=${this.runAllScenarios}>Run all</button>
+            <table>
+              <thead>
                 <tr>
-                  <td>${scenario.label}</td>
-                  <td>
-                    <button @click=${() => this.runScenario(index)}>Run</button>
-                  </td>
-                  <td>
-                    ${
-                      result
-                        ? html`
-                            <span class=${result.pass ? 'pass' : 'fail'}>
-                              ${result.pass ? '✅ PASS' : '❌ FAIL'}
-                            </span>
-                            <br />
-                            <small>
-                              ${
-                                result.actualError
-                                  ? `threw: ${result.actualError}`
-                                  : result.actualHeaders.length
-                                    ? result.actualHeaders
-                                        .map(([k, v]) => `${k}: ${v}`)
-                                        .join(', ')
-                                    : '(no headers)'
-                              }
-                            </small>
-                          `
-                        : html`<em>not run</em>`
-                    }
-                  </td>
+                  <th>Scenario</th>
+                  <th>Run</th>
+                  <th>Result</th>
                 </tr>
-              `;
-            })}
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>Manual request</h2>
-        <fieldset>
-          <legend>Request</legend>
-          <label>
-            Method:
-            <select
-              .value=${this.method}
-              @change=${(e: Event) => {
-                this.method = (e.target as HTMLSelectElement).value as Method;
-              }}
-            >
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="PUT">PUT</option>
-              <option value="DELETE">DELETE</option>
-            </select>
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              .checked=${this.includeCsrfToken}
-              @change=${(e: Event) => {
-                this.includeCsrfToken = (e.target as HTMLInputElement).checked;
-              }}
-            />
-            includeCsrfToken
-          </label>
-          <label>
-            Existing X-CSRF-Token header (blank = none):
-            <input
-              type="text"
-              .value=${this.existingHeaderValue}
-              @input=${(e: Event) => {
-                this.existingHeaderValue = (e.target as HTMLInputElement).value;
-              }}
-              placeholder="e.g. manual-token"
-            />
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>getCsrfToken() behavior</legend>
-          <label>
-            <input
-              type="checkbox"
-              .checked=${this.tokenThrows}
-              @change=${(e: Event) => {
-                this.tokenThrows = (e.target as HTMLInputElement).checked;
-              }}
-            />
-            simulate getCsrfToken() throwing (e.g. token endpoint down)
-          </label>
-          <label>
-            Token value returned:
-            <input
-              type="text"
-              .value=${this.tokenValue}
-              @input=${(e: Event) => {
-                this.tokenValue = (e.target as HTMLInputElement).value;
-              }}
-              ?disabled=${this.tokenThrows}
-            />
-          </label>
-        </fieldset>
-
-        <button @click=${this.sendManualRequest}>Send</button>
-
-        ${
-          this.manualError
-            ? html`<pre class="error">Error: ${this.manualError}</pre>`
-            : ''
-        }
-        ${
-          this.manualResult
-            ? html`
-                <h3>Resulting request</h3>
-                <p>
-                  <strong>${this.manualResult.method}</strong> ${
-                    this.manualResult.url
-                  }
-                </p>
-                <table>
-                  <thead>
+              </thead>
+              <tbody>
+                ${SCENARIOS.map((scenario, index) => {
+                  const result = this.scenarioResults[index];
+                  return html`
                     <tr>
-                      <th>Header</th>
-                      <th>Value</th>
+                      <td>${scenario.label}</td>
+                      <td>
+                        <button @click=${() => this.runScenario(index)}>
+                          Run
+                        </button>
+                      </td>
+                      <td>
+                        ${
+                          result
+                            ? html`
+                                <span class=${result.pass ? 'pass' : 'fail'}>
+                                  ${result.pass ? '✅ PASS' : '❌ FAIL'}
+                                </span>
+                                <br />
+                                <small>
+                                  ${
+                                    result.actualError
+                                      ? `threw: ${result.actualError}`
+                                      : result.actualHeaders.length
+                                        ? result.actualHeaders
+                                            .map(([k, v]) => `${k}: ${v}`)
+                                            .join(', ')
+                                        : '(no headers)'
+                                  }
+                                </small>
+                              `
+                            : html`<em>not run</em>`
+                        }
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    ${this.manualResult.headers.map(
-                      ([k, v]) =>
-                        html`<tr>
-                          <td>${k}</td>
-                          <td>${v}</td>
-                        </tr>`,
-                    )}
-                  </tbody>
-                </table>
-                ${
-                  this.manualResult.headers.some(
-                    ([k]) => k.toLowerCase() === 'x-csrf-token',
-                  )
-                    ? html`<p class="pass">✅ X-CSRF-Token attached</p>`
-                    : html`<p class="skip">⏭️ No X-CSRF-Token header sent</p>`
-                }
-              `
-            : ''
-        }
-      </section>
+                  `;
+                })}
+              </tbody>
+            </table>
+          </section>
 
-      <section>
-        <h2>Live request (real network call)</h2>
-        <p>
-          Fires an actual request at a real backend — fetches a genuine signed
-          CSRF token from that host's
-          <code>/services/csrf-token</code>, then POSTs to the account settings
-          service (matching <code>ia-verification.ts</code>'s
-          <code>verifyIAPassword()</code> call) with
-          <code>includeCsrfToken: true</code>. Requires you to already be logged
-          in to the target host in this browser (session cookie).
-        </p>
-        <fieldset>
-          <legend>Target</legend>
-          <label>
-            Base URL:
-            <input
-              type="text"
-              size="50"
-              .value=${this.liveBaseUrl}
-              @input=${(e: Event) => {
-                this.liveBaseUrl = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-          <label>
-            Endpoint path:
-            <input
-              type="text"
-              size="30"
-              .value=${this.liveEndpointPath}
-              @input=${(e: Event) => {
-                this.liveEndpointPath = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              .checked=${this.liveIncludeCsrfToken}
-              @change=${(e: Event) => {
-                this.liveIncludeCsrfToken = (
-                  e.target as HTMLInputElement
-                ).checked;
-              }}
-            />
-            includeCsrfToken (uncheck to simulate sending without a token)
-          </label>
-          <label>
-            Action:
-            <input
-              type="text"
-              .value=${this.liveAction}
-              @input=${(e: Event) => {
-                this.liveAction = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-          <label>
-            Identifier:
-            <input
-              type="text"
-              .value=${this.liveIdentifier}
-              @input=${(e: Event) => {
-                this.liveIdentifier = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-          <label>
-            Password:
-            <input
-              type="text"
-              .value=${this.livePassword}
-              @input=${(e: Event) => {
-                this.livePassword = (e.target as HTMLInputElement).value;
-              }}
-            />
-          </label>
-        </fieldset>
+          <section>
+            <h2>Manual request</h2>
+            <fieldset>
+              <legend>Request</legend>
+              <label>
+                Method:
+                <select
+                  .value=${this.method}
+                  @change=${(e: Event) => {
+                    this.method = (e.target as HTMLSelectElement)
+                      .value as Method;
+                  }}
+                >
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  .checked=${this.includeCsrfToken}
+                  @change=${(e: Event) => {
+                    this.includeCsrfToken = (
+                      e.target as HTMLInputElement
+                    ).checked;
+                  }}
+                />
+                includeCsrfToken
+              </label>
+              <label>
+                Existing X-CSRF-Token header (blank = none):
+                <input
+                  type="text"
+                  .value=${this.existingHeaderValue}
+                  @input=${(e: Event) => {
+                    this.existingHeaderValue = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  }}
+                  placeholder="e.g. manual-token"
+                />
+              </label>
+            </fieldset>
 
-        <fieldset ?disabled=${!this.liveIncludeCsrfToken}>
-          <legend>CSRF Token</legend>
-          <label>
-            X-CSRF-Token:
-            <input
-              type="text"
-              size="50"
-              .value=${this.liveCsrfToken}
-              @input=${(e: Event) => {
-                this.liveCsrfToken = (e.target as HTMLInputElement).value;
-              }}
-              placeholder="fetched automatically, or edit to test a bad token"
-            />
-          </label>
-          <button
-            @click=${this.fetchLiveToken}
-            ?disabled=${this.liveTokenFetching}
-          >
-            ${this.liveTokenFetching ? 'Fetching…' : 'Fetch token'}
-          </button>
-          <small>
-            Auto-fetched from <code>/services/csrf-token</code> on Send if left
-            blank. Edit it to send a bad/expired token and confirm the backend
-            actually rejects it.
+            <fieldset>
+              <legend>getCsrfToken() behavior</legend>
+              <label>
+                <input
+                  type="checkbox"
+                  .checked=${this.tokenThrows}
+                  @change=${(e: Event) => {
+                    this.tokenThrows = (e.target as HTMLInputElement).checked;
+                  }}
+                />
+                simulate getCsrfToken() throwing (e.g. token endpoint down)
+              </label>
+              <label>
+                Token value returned:
+                <input
+                  type="text"
+                  .value=${this.tokenValue}
+                  @input=${(e: Event) => {
+                    this.tokenValue = (e.target as HTMLInputElement).value;
+                  }}
+                  ?disabled=${this.tokenThrows}
+                />
+              </label>
+            </fieldset>
+
+            <button @click=${this.sendManualRequest}>Send</button>
+
             ${
-              !this.liveIncludeCsrfToken
-                ? html`<br /><strong
-                      >includeCsrfToken is unchecked — no token will be
-                      sent.</strong
-                    >`
+              this.manualError
+                ? html`<pre class="error">Error: ${this.manualError}</pre>`
                 : ''
             }
-          </small>
-        </fieldset>
+            ${
+              this.manualResult
+                ? html`
+                    <h3>Resulting request</h3>
+                    <p>
+                      <strong>${this.manualResult.method}</strong> ${
+                        this.manualResult.url
+                      }
+                    </p>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Header</th>
+                          <th>Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${this.manualResult.headers.map(
+                          ([k, v]) =>
+                            html`<tr>
+                              <td>${k}</td>
+                              <td>${v}</td>
+                            </tr>`,
+                        )}
+                      </tbody>
+                    </table>
+                    ${
+                      this.manualResult.headers.some(
+                        ([k]) => k.toLowerCase() === 'x-csrf-token',
+                      )
+                        ? html`<p class="pass">✅ X-CSRF-Token attached</p>`
+                        : html`<p class="skip">
+                            ⏭️ No X-CSRF-Token header sent
+                          </p>`
+                    }
+                  `
+                : ''
+            }
+          </section>
+        </div>
 
-        <button @click=${this.sendLiveRequest} ?disabled=${this.liveLoading}>
-          ${this.liveLoading ? 'Sending…' : 'Send live request'}
-        </button>
+        <div class="demo-column">
+          <section>
+            <h2>Live request (real network call)</h2>
+            <p>
+              Fires an actual request at a real backend — fetches a genuine
+              signed CSRF token from that host's
+              <code>/services/csrf-token</code>, then POSTs to the account
+              settings service (matching <code>ia-verification.ts</code>'s
+              <code>verifyIAPassword()</code> call) with
+              <code>includeCsrfToken: true</code>. Requires you to already be
+              logged in to the target host in this browser (session cookie).
+            </p>
+            <fieldset>
+              <legend>Target</legend>
+              <label>
+                Base URL:
+                <input
+                  type="text"
+                  size="50"
+                  .value=${this.liveBaseUrl}
+                  @input=${(e: Event) => {
+                    this.liveBaseUrl = (e.target as HTMLInputElement).value;
+                  }}
+                />
+              </label>
+              <label>
+                Endpoint path:
+                <input
+                  type="text"
+                  size="30"
+                  .value=${this.liveEndpointPath}
+                  @input=${(e: Event) => {
+                    this.liveEndpointPath = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  }}
+                />
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  .checked=${this.liveIncludeCsrfToken}
+                  @change=${(e: Event) => {
+                    this.liveIncludeCsrfToken = (
+                      e.target as HTMLInputElement
+                    ).checked;
+                  }}
+                />
+                includeCsrfToken (uncheck to simulate sending without a token)
+              </label>
+              <label>
+                Action:
+                <input
+                  type="text"
+                  .value=${this.liveAction}
+                  @input=${(e: Event) => {
+                    this.liveAction = (e.target as HTMLInputElement).value;
+                  }}
+                />
+              </label>
+              <label>
+                Identifier:
+                <input
+                  type="text"
+                  .value=${this.liveIdentifier}
+                  @input=${(e: Event) => {
+                    this.liveIdentifier = (e.target as HTMLInputElement).value;
+                  }}
+                />
+              </label>
+              <label>
+                Password:
+                <input
+                  type="text"
+                  .value=${this.livePassword}
+                  @input=${(e: Event) => {
+                    this.livePassword = (e.target as HTMLInputElement).value;
+                  }}
+                />
+              </label>
+            </fieldset>
 
-        ${
-          this.liveError
-            ? html`<pre class="error">Error: ${this.liveError}</pre>`
-            : ''
-        }
-        ${
-          this.liveHeaders
-            ? html`
-                <h3>Request headers sent</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Header</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${this.liveHeaders.map(
-                      ([k, v]) =>
-                        html`<tr>
-                          <td>${k}</td>
-                          <td>${v}</td>
-                        </tr>`,
-                    )}
-                  </tbody>
-                </table>
-                <p>
-                  <small>
-                    Value came from the CSRF Token field above (auto-fetched
-                    from
-                    <code>${this.liveBaseUrl}/services/csrf-token</code>
-                    unless you edited it).
-                  </small>
-                </p>
-              `
-            : ''
-        }
-        ${
-          this.liveResult !== undefined
-            ? html`
-                <h3>Response</h3>
-                <pre>${JSON.stringify(this.liveResult, null, 2)}</pre>
-              `
-            : ''
-        }
-      </section>
+            <fieldset ?disabled=${!this.liveIncludeCsrfToken}>
+              <legend>CSRF Token</legend>
+              <label>
+                X-CSRF-Token:
+                <input
+                  type="text"
+                  size="50"
+                  .value=${this.liveCsrfToken}
+                  @input=${(e: Event) => {
+                    this.liveCsrfToken = (e.target as HTMLInputElement).value;
+                  }}
+                  placeholder="fetched automatically, or edit to test a bad token"
+                />
+              </label>
+              <button
+                @click=${this.fetchLiveToken}
+                ?disabled=${this.liveTokenFetching}
+              >
+                ${this.liveTokenFetching ? 'Fetching…' : 'Fetch token'}
+              </button>
+              <small>
+                Auto-fetched from <code>/services/csrf-token</code> on Send if
+                left blank. Edit it to send a bad/expired token and confirm the
+                backend actually rejects it.
+                ${
+                  !this.liveIncludeCsrfToken
+                    ? html`<br /><strong
+                          >includeCsrfToken is unchecked — no token will be
+                          sent.</strong
+                        >`
+                    : ''
+                }
+              </small>
+            </fieldset>
+
+            <button
+              @click=${this.sendLiveRequest}
+              ?disabled=${this.liveLoading}
+            >
+              ${this.liveLoading ? 'Sending…' : 'Send live request'}
+            </button>
+
+            ${
+              this.liveError
+                ? html`<pre class="error">Error: ${this.liveError}</pre>`
+                : ''
+            }
+            ${
+              this.liveHeaders
+                ? html`
+                    <h3>Request headers sent</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Header</th>
+                          <th>Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${this.liveHeaders.map(
+                          ([k, v]) =>
+                            html`<tr>
+                              <td>${k}</td>
+                              <td>${v}</td>
+                            </tr>`,
+                        )}
+                      </tbody>
+                    </table>
+                    <p>
+                      <small>
+                        Value came from the CSRF Token field above (auto-fetched
+                        from
+                        <code>${this.liveBaseUrl}/services/csrf-token</code>
+                        unless you edited it).
+                      </small>
+                    </p>
+                  `
+                : ''
+            }
+            ${
+              this.liveResult !== undefined
+                ? html`
+                    <h3>Response</h3>
+                    <pre>${JSON.stringify(this.liveResult, null, 2)}</pre>
+                  `
+                : ''
+            }
+          </section>
+        </div>
+      </div>
     `;
   }
 
@@ -705,7 +725,21 @@ export class CsrfDemo extends LitElement {
       display: block;
       font-family: sans-serif;
       padding: 20px;
-      max-width: 900px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .demo-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .demo-columns {
+        grid-template-columns: 1fr;
+      }
     }
 
     section {
