@@ -142,16 +142,15 @@ export class CsrfDemo extends LitElement {
   @state() private manualError?: string;
   @state() private scenarioResults: Record<number, ScenarioResult> = {};
 
-  @state() private liveBaseUrl =
-    'https://ia-petabox-claudit-148.dev.archive.org';
+  @state() private liveBaseUrl = 'https://archive.org';
 
-  @state() private liveIdentifier = 'goody';
+  @state() private liveEndpointPath = '/services/account/settings/';
 
-  @state() private liveMediatype = 'texts';
+  @state() private liveAction = 'verify-password';
 
-  @state() private liveTitle = 'FetchHandler demo test';
+  @state() private liveIdentifier = '@abc';
 
-  @state() private liveMethod: 'PUT' | 'DELETE' = 'PUT';
+  @state() private livePassword = 'abc';
 
   @state() private liveRequireCsrfToken = true;
 
@@ -327,28 +326,32 @@ export class CsrfDemo extends LitElement {
         apiBaseUrl: this.liveBaseUrl,
         getCsrfToken: async () => token,
       });
-      const body: Record<string, string> = {
+      const body = {
+        action: this.liveAction,
         identifier: this.liveIdentifier,
-        mediatype: this.liveMediatype,
+        password: this.livePassword,
+        'csrf-token': token, // (in-case, existing backend expects it in the body too)
       };
-      if (this.liveMethod === 'PUT') body.title = this.liveTitle;
 
-      // fetchApiResponse always sets Accept; X-CSRF-Token is only added
-      // when requireCsrfToken is checked — this is exactly what
-      // FetchHandler will send.
-      this.liveHeaders = this.liveRequireCsrfToken
-        ? [
-            ['Accept', 'application/json'],
-            ['X-CSRF-Token', token],
-          ]
-        : [['Accept', 'application/json']];
+      // fetchApiResponse always sets Accept; Content-Type is set explicitly
+      // here (matching ia-verification.ts); X-CSRF-Token is only added when
+      // requireCsrfToken is checked — this is exactly what FetchHandler
+      // will send.
+      this.liveHeaders = [
+        ['Accept', 'application/json'],
+        ['Content-Type', 'application/json'],
+        ...(this.liveRequireCsrfToken
+          ? ([['X-CSRF-Token', token]] as [string, string][])
+          : []),
+      ];
 
       this.liveResult = await fetchHandler.fetchApiPathResponse(
-        '/services/offshoot/details-page/favorite.php',
+        this.liveEndpointPath,
         {
-          method: this.liveMethod,
+          method: 'POST',
           includeCredentials: true,
           body: JSON.stringify(body),
+          headers: { 'Content-Type': 'application/json' },
           requireCsrfToken: this.liveRequireCsrfToken,
         },
       );
@@ -524,10 +527,11 @@ export class CsrfDemo extends LitElement {
         <p>
           Fires an actual request at a real backend — fetches a genuine signed
           CSRF token from that host's
-          <code>/services/csrf-token</code>, then sends a real PUT/DELETE to the
-          favorites endpoint with <code>requireCsrfToken: true</code>. Requires
-          you to already be logged in to the target host in this browser
-          (session cookie).
+          <code>/services/csrf-token</code>, then POSTs to the account settings
+          service (matching <code>ia-verification.ts</code>'s
+          <code>verifyIAPassword()</code> call) with
+          <code>requireCsrfToken: true</code>. Requires you to already be logged
+          in to the target host in this browser (session cookie).
         </p>
         <fieldset>
           <legend>Target</legend>
@@ -543,18 +547,15 @@ export class CsrfDemo extends LitElement {
             />
           </label>
           <label>
-            Method:
-            <select
-              .value=${this.liveMethod}
-              @change=${(e: Event) => {
-                this.liveMethod = (e.target as HTMLSelectElement).value as
-                  | 'PUT'
-                  | 'DELETE';
+            Endpoint path:
+            <input
+              type="text"
+              size="30"
+              .value=${this.liveEndpointPath}
+              @input=${(e: Event) => {
+                this.liveEndpointPath = (e.target as HTMLInputElement).value;
               }}
-            >
-              <option value="PUT">PUT (add favorite)</option>
-              <option value="DELETE">DELETE (remove favorite)</option>
-            </select>
+            />
           </label>
           <label>
             <input
@@ -569,6 +570,16 @@ export class CsrfDemo extends LitElement {
             requireCsrfToken (uncheck to simulate sending without a token)
           </label>
           <label>
+            Action:
+            <input
+              type="text"
+              .value=${this.liveAction}
+              @input=${(e: Event) => {
+                this.liveAction = (e.target as HTMLInputElement).value;
+              }}
+            />
+          </label>
+          <label>
             Identifier:
             <input
               type="text"
@@ -579,24 +590,13 @@ export class CsrfDemo extends LitElement {
             />
           </label>
           <label>
-            Mediatype:
+            Password:
             <input
               type="text"
-              .value=${this.liveMediatype}
+              .value=${this.livePassword}
               @input=${(e: Event) => {
-                this.liveMediatype = (e.target as HTMLInputElement).value;
+                this.livePassword = (e.target as HTMLInputElement).value;
               }}
-            />
-          </label>
-          <label>
-            Title (PUT only):
-            <input
-              type="text"
-              .value=${this.liveTitle}
-              @input=${(e: Event) => {
-                this.liveTitle = (e.target as HTMLInputElement).value;
-              }}
-              ?disabled=${this.liveMethod !== 'PUT'}
             />
           </label>
         </fieldset>

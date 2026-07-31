@@ -6,22 +6,60 @@
     body {
       background: #fff;
       font-family: sans-serif;
+      margin: 0;
+    }
+
+    h1.page-title {
+      text-align: center;
+      padding: 20px 0 0;
+      margin: 0;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+      align-items: start;
+    }
+
+    .demo-column {
+      border-right: 1px solid #ddd;
+      min-width: 0;
+    }
+
+    .demo-column:last-child {
+      border-right: none;
+    }
+
+    @media (max-width: 1100px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .demo-column {
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="demo"></div>
+  <h1 class="page-title">@internetarchive/fetch-handler demos</h1>
+  <div class="demo-grid">
+    <div class="demo-column" id="fetch-demo"></div>
+    <!-- <div class="demo-column" id="retry-demo"></div> -->
+    <div class="demo-column" id="csrf-demo"></div>
+  </div>
 
   <script type="module">
     import { html, render } from 'lit-html';
     import '../dist/demo/app-root.js';
+    import '../dist/demo/retry-demo.js';
+    import '../dist/demo/csrf-demo.js';
 
-    render(
-      html`
-        <app-root></app-root>
-      `,
-      document.querySelector('#demo')
-    );
+    render(html`<app-root></app-root>`, document.querySelector('#fetch-demo'));
+    // render(html`<retry-demo></retry-demo>`, document.querySelector('#retry-demo'));
+    render(html`<csrf-demo></csrf-demo>`, document.querySelector('#csrf-demo'));
   </script>
 </body>
 </html>

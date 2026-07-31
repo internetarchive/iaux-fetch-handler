@@ -23,7 +23,12 @@ export type FetchHandlerConstructorOptions = {
   getCsrfToken?: () => Promise<string>;
 };
 
-const METHODS_REQUIRING_CSRF_TOKEN = new Set(['POST', 'PUT', 'DELETE']);
+const METHODS_REQUIRING_CSRF_TOKEN = new Set([
+  'POST',
+  'PUT',
+  'DELETE',
+  'PATCH',
+]);
 
 /**
  * The FetchHandler adds some common helpers:
