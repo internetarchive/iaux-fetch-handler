@@ -15,7 +15,7 @@ export type FetchHandlerConstructorOptions = {
   /**
    * Optional CSRF token source. When provided, callers can opt individual
    * `POST`/`PUT`/`DELETE` requests into an automatic `X-CSRF-Token` header
-   * by passing `requireCsrfToken: true` (see `ApiFetchOptions`/
+   * by passing `includeCsrfToken: true` (see `ApiFetchOptions`/
    * `FetchOptions`). Requests that don't opt in are unaffected — this is
    * off by default because not every backend endpoint's CORS policy
    * allow-lists that header yet.
@@ -94,7 +94,7 @@ export class FetchHandler implements FetchHandlerInterface {
     const response = await this.fetch(url, {
       requestInit: requestInit,
       retryConfig: options?.retryConfig,
-      requireCsrfToken: options?.requireCsrfToken,
+      includeCsrfToken: options?.includeCsrfToken,
     });
     const json = await response.json();
     return json as T;
@@ -119,7 +119,7 @@ export class FetchHandler implements FetchHandlerInterface {
 
   /**
    * If a CSRF token source was configured, the caller opted in via
-   * `requireCsrfToken: true`, and the request method needs one, resolve the
+   * `includeCsrfToken: true`, and the request method needs one, resolve the
    * token and attach it as an `X-CSRF-Token` header. Off by default: not
    * every backend endpoint's CORS policy allow-lists that header yet, so
    * each caller opts in only once its endpoint is known to support it.
@@ -136,7 +136,7 @@ export class FetchHandler implements FetchHandlerInterface {
     if (!this.getCsrfToken) return options;
 
     const fetchOptions = legacyArgsAsFetchOptions(options) ?? {};
-    if (!fetchOptions.requireCsrfToken) return options;
+    if (!fetchOptions.includeCsrfToken) return options;
 
     const requestInit = fetchOptions.requestInit ?? {};
     const method = (

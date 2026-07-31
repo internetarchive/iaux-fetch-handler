@@ -25,8 +25,8 @@ describe('legacyArgsAsFetchOptions', () => {
     expect(fo).to.equal(undefined);
   });
 
-  it('recognizes FetchOptions by requireCsrfToken alone', () => {
-    const options: FetchOptions = { requireCsrfToken: true };
+  it('recognizes FetchOptions by includeCsrfToken alone', () => {
+    const options: FetchOptions = { includeCsrfToken: true };
     const fo = legacyArgsAsFetchOptions(options);
     expect(fo).to.equal(options);
   });

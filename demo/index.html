@@ -47,18 +47,15 @@
   <h1 class="page-title">@internetarchive/fetch-handler demos</h1>
   <div class="demo-grid">
     <div class="demo-column" id="fetch-demo"></div>
-    <!-- <div class="demo-column" id="retry-demo"></div> -->
     <div class="demo-column" id="csrf-demo"></div>
   </div>
 
   <script type="module">
     import { html, render } from 'lit-html';
     import '../dist/demo/app-root.js';
-    import '../dist/demo/retry-demo.js';
     import '../dist/demo/csrf-demo.js';
 
     render(html`<app-root></app-root>`, document.querySelector('#fetch-demo'));
-    // render(html`<retry-demo></retry-demo>`, document.querySelector('#retry-demo'));
     render(html`<csrf-demo></csrf-demo>`, document.querySelector('#csrf-demo'));
   </script>
 </body>

@@ -119,7 +119,7 @@ await fetchHandler.fetch('https://foo.com/api', {
 
 ## CSRF Tokens
 
-`FetchHandler` can attach an `X-CSRF-Token` header to a request. Provide a `getCsrfToken` function when constructing the handler, then opt individual requests in with `requireCsrfToken: true`:
+`FetchHandler` can attach an `X-CSRF-Token` header to a request. Provide a `getCsrfToken` function when constructing the handler, then opt individual requests in with `includeCsrfToken: true`:
 
 ```ts
 const fetchHandler = new FetchHandler({
@@ -134,11 +134,11 @@ const fetchHandler = new FetchHandler({
 await fetchHandler.fetchApiPathResponse('/favorites/add', {
   method: 'POST',
   body: JSON.stringify({ identifier: 'goody' }),
-  requireCsrfToken: true,
+  includeCsrfToken: true,
 });
 ```
 
-This is opt-in and off by default: not every backend endpoint's CORS policy allow-lists that header yet, and getting it wrong fails loudly (a blocked CORS preflight) rather than just missing a security control, so each caller should only pass `requireCsrfToken: true` once its target endpoint is known to accept the header. A request without it (or with `getCsrfToken` unset entirely) behaves exactly as before.
+This is opt-in and off by default: not every backend endpoint's CORS policy allow-lists that header yet, and getting it wrong fails loudly (a blocked CORS preflight) rather than just missing a security control, so each caller should only pass `includeCsrfToken: true` once its target endpoint is known to accept the header. A request without it (or with `getCsrfToken` unset entirely) behaves exactly as before.
 
 If a caller already sets an `X-CSRF-Token` header explicitly, it's left as-is.
 

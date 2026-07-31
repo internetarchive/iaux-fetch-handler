@@ -37,7 +37,7 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE';
 type Scenario = {
   label: string;
   method: Method;
-  requireCsrfToken: boolean;
+  includeCsrfToken: boolean;
   existingHeaderValue?: string;
   tokenValue?: string;
   tokenThrows?: boolean;
@@ -49,47 +49,47 @@ type Scenario = {
 
 const SCENARIOS: Scenario[] = [
   {
-    label: 'POST + requireCsrfToken: true → header attached',
+    label: 'POST + includeCsrfToken: true → header attached',
     method: 'POST',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenValue: 'demo-token-abc',
     expectHeader: true,
     expectValue: 'demo-token-abc',
   },
   {
-    label: 'PUT + requireCsrfToken: true → header attached',
+    label: 'PUT + includeCsrfToken: true → header attached',
     method: 'PUT',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenValue: 'demo-token-abc',
     expectHeader: true,
     expectValue: 'demo-token-abc',
   },
   {
-    label: 'DELETE + requireCsrfToken: true → header attached',
+    label: 'DELETE + includeCsrfToken: true → header attached',
     method: 'DELETE',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenValue: 'demo-token-abc',
     expectHeader: true,
     expectValue: 'demo-token-abc',
   },
   {
-    label: 'POST without requireCsrfToken → NOT attached (opt-in default off)',
+    label: 'POST without includeCsrfToken → NOT attached (opt-in default off)',
     method: 'POST',
-    requireCsrfToken: false,
+    includeCsrfToken: false,
     tokenValue: 'demo-token-abc',
     expectHeader: false,
   },
   {
-    label: 'GET + requireCsrfToken: true → NOT attached (GET never gets it)',
+    label: 'GET + includeCsrfToken: true → NOT attached (GET never gets it)',
     method: 'GET',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenValue: 'demo-token-abc',
     expectHeader: false,
   },
   {
     label: 'Existing X-CSRF-Token header is preserved, not overwritten',
     method: 'POST',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     existingHeaderValue: 'manual-token',
     tokenValue: 'auto-token',
     expectHeader: true,
@@ -99,7 +99,7 @@ const SCENARIOS: Scenario[] = [
     label:
       "Invalid/garbage token is attached as-is (FetchHandler doesn't validate — that's the server's job)",
     method: 'POST',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenValue: 'garbage-not-a-real-token',
     expectHeader: true,
     expectValue: 'garbage-not-a-real-token',
@@ -107,7 +107,7 @@ const SCENARIOS: Scenario[] = [
   {
     label: 'getCsrfToken() throwing rejects the request',
     method: 'POST',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     tokenThrows: true,
     expectHeader: false,
     expectThrows: true,
@@ -115,7 +115,7 @@ const SCENARIOS: Scenario[] = [
   {
     label: 'No getCsrfToken configured at all → never attaches',
     method: 'POST',
-    requireCsrfToken: true,
+    includeCsrfToken: true,
     noTokenSource: true,
     expectHeader: false,
   },
@@ -130,7 +130,7 @@ type ScenarioResult = {
 @customElement('csrf-demo')
 export class CsrfDemo extends LitElement {
   @state() private method: Method = 'POST';
-  @state() private requireCsrfToken = true;
+  @state() private includeCsrfToken = true;
   @state() private tokenValue = 'demo-token-123';
   @state() private tokenThrows = false;
   @state() private existingHeaderValue = '';
@@ -152,7 +152,7 @@ export class CsrfDemo extends LitElement {
 
   @state() private livePassword = 'abc';
 
-  @state() private liveRequireCsrfToken = true;
+  @state() private liveIncludeCsrfToken = true;
 
   @state() private liveLoading = false;
 
@@ -203,7 +203,7 @@ export class CsrfDemo extends LitElement {
         method: this.method,
         includeCredentials: true,
         headers,
-        requireCsrfToken: this.requireCsrfToken,
+        includeCsrfToken: this.includeCsrfToken,
       });
       this.manualResult = {
         url: retrier.lastUrl,
@@ -235,7 +235,7 @@ export class CsrfDemo extends LitElement {
         method: scenario.method,
         includeCredentials: true,
         headers,
-        requireCsrfToken: scenario.requireCsrfToken,
+        includeCsrfToken: scenario.includeCsrfToken,
       });
       actualHeaders = headerEntries(retrier.lastInit?.headers);
     } catch (err) {
@@ -304,7 +304,7 @@ export class CsrfDemo extends LitElement {
    * a server whose CORS policy allow-lists X-CSRF-Token. Uses whatever is
    * currently in the CSRF Token field — fetching a fresh one first only if
    * it's still empty — so you can hand-edit the token to a bad value and
-   * confirm the backend actually rejects it. When "requireCsrfToken" is
+   * confirm the backend actually rejects it. When "includeCsrfToken" is
    * unchecked, no token is fetched or attached at all, so you can also
    * confirm the endpoint's real-world behavior without the header.
    */
@@ -315,7 +315,7 @@ export class CsrfDemo extends LitElement {
     this.liveLoading = true;
     try {
       let token = '';
-      if (this.liveRequireCsrfToken) {
+      if (this.liveIncludeCsrfToken) {
         if (!this.liveCsrfToken) {
           this.liveCsrfToken = await this.fetchRealCsrfToken(this.liveBaseUrl);
         }
@@ -335,12 +335,12 @@ export class CsrfDemo extends LitElement {
 
       // fetchApiResponse always sets Accept; Content-Type is set explicitly
       // here (matching ia-verification.ts); X-CSRF-Token is only added when
-      // requireCsrfToken is checked — this is exactly what FetchHandler
+      // includeCsrfToken is checked — this is exactly what FetchHandler
       // will send.
       this.liveHeaders = [
         ['Accept', 'application/json'],
         ['Content-Type', 'application/json'],
-        ...(this.liveRequireCsrfToken
+        ...(this.liveIncludeCsrfToken
           ? ([['X-CSRF-Token', token]] as [string, string][])
           : []),
       ];
@@ -352,7 +352,7 @@ export class CsrfDemo extends LitElement {
           includeCredentials: true,
           body: JSON.stringify(body),
           headers: { 'Content-Type': 'application/json' },
-          requireCsrfToken: this.liveRequireCsrfToken,
+          includeCsrfToken: this.liveIncludeCsrfToken,
         },
       );
     } catch (err) {
@@ -367,7 +367,7 @@ export class CsrfDemo extends LitElement {
       <h1>FetchHandler CSRF Demo</h1>
       <p>
         Exercises the CSRF auto-attach logic (<code>getCsrfToken</code> /
-        <code>requireCsrfToken</code>) against a captured request instead of a
+        <code>includeCsrfToken</code>) against a captured request instead of a
         real network call, so you can see exactly what FetchHandler would send
         for a given scenario.
       </p>
@@ -443,12 +443,12 @@ export class CsrfDemo extends LitElement {
           <label>
             <input
               type="checkbox"
-              .checked=${this.requireCsrfToken}
+              .checked=${this.includeCsrfToken}
               @change=${(e: Event) => {
-                this.requireCsrfToken = (e.target as HTMLInputElement).checked;
+                this.includeCsrfToken = (e.target as HTMLInputElement).checked;
               }}
             />
-            requireCsrfToken
+            includeCsrfToken
           </label>
           <label>
             Existing X-CSRF-Token header (blank = none):
@@ -541,7 +541,7 @@ export class CsrfDemo extends LitElement {
           <code>/services/csrf-token</code>, then POSTs to the account settings
           service (matching <code>ia-verification.ts</code>'s
           <code>verifyIAPassword()</code> call) with
-          <code>requireCsrfToken: true</code>. Requires you to already be logged
+          <code>includeCsrfToken: true</code>. Requires you to already be logged
           in to the target host in this browser (session cookie).
         </p>
         <fieldset>
@@ -571,14 +571,14 @@ export class CsrfDemo extends LitElement {
           <label>
             <input
               type="checkbox"
-              .checked=${this.liveRequireCsrfToken}
+              .checked=${this.liveIncludeCsrfToken}
               @change=${(e: Event) => {
-                this.liveRequireCsrfToken = (
+                this.liveIncludeCsrfToken = (
                   e.target as HTMLInputElement
                 ).checked;
               }}
             />
-            requireCsrfToken (uncheck to simulate sending without a token)
+            includeCsrfToken (uncheck to simulate sending without a token)
           </label>
           <label>
             Action:
@@ -612,7 +612,7 @@ export class CsrfDemo extends LitElement {
           </label>
         </fieldset>
 
-        <fieldset ?disabled=${!this.liveRequireCsrfToken}>
+        <fieldset ?disabled=${!this.liveIncludeCsrfToken}>
           <legend>CSRF Token</legend>
           <label>
             X-CSRF-Token:
@@ -637,9 +637,9 @@ export class CsrfDemo extends LitElement {
             blank. Edit it to send a bad/expired token and confirm the backend
             actually rejects it.
             ${
-              !this.liveRequireCsrfToken
+              !this.liveIncludeCsrfToken
                 ? html`<br /><strong
-                      >requireCsrfToken is unchecked — no token will be
+                      >includeCsrfToken is unchecked — no token will be
                       sent.</strong
                     >`
                 : ''

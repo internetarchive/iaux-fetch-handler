@@ -8,7 +8,7 @@ export const legacyArgsAsFetchOptions = (
   if (
     'requestInit' in options ||
     'retryConfig' in options ||
-    'requireCsrfToken' in options
+    'includeCsrfToken' in options
   ) {
     return options as FetchOptions;
   }

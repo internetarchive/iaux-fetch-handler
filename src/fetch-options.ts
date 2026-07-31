@@ -12,7 +12,7 @@ export type FetchOptions = {
    * default — only opt in once the target endpoint's CORS policy is known
    * to allow-list that header.
    */
-  requireCsrfToken?: boolean;
+  includeCsrfToken?: boolean;
 };
 
 /**
@@ -30,5 +30,5 @@ export type ApiFetchOptions = {
    * default — only opt in once the target endpoint's CORS policy is known
    * to allow-list that header.
    */
-  requireCsrfToken?: boolean;
+  includeCsrfToken?: boolean;
 };
