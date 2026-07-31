@@ -100,34 +100,34 @@
       </button>
 
       ${this.log.length?f`
-            <h3>Attempts</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Attempt</th>
-                  <th>Status</th>
-                  <th>Time since start</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${this.log.map(e=>f`
-                    <tr>
-                      <td>${e.attempt}</td>
-                      <td class=${e.status===200?"pass":"fail"}>
-                        ${e.status}
-                      </td>
-                      <td>${e.timeSinceStartMs}ms</td>
-                    </tr>
-                  `)}
-              </tbody>
-            </table>
-          `:""}
+              <h3>Attempts</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Attempt</th>
+                    <th>Status</th>
+                    <th>Time since start</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${this.log.map(e=>f`
+                      <tr>
+                        <td>${e.attempt}</td>
+                        <td class=${e.status===200?"pass":"fail"}>
+                          ${e.status}
+                        </td>
+                        <td>${e.timeSinceStartMs}ms</td>
+                      </tr>
+                    `)}
+                </tbody>
+              </table>
+            `:""}
       ${this.outcome?f`
-            <p class=${this.outcome.success?"pass":"fail"}>
-              ${this.outcome.success?`✅ Succeeded after ${this.log.length} attempt(s)`:`❌ Gave up after ${this.log.length} attempt(s)`}
-              — ${this.outcome.totalMs}ms total
-            </p>
-          `:""}
+              <p class=${this.outcome.success?"pass":"fail"}>
+                ${this.outcome.success?`✅ Succeeded after ${this.log.length} attempt(s)`:`❌ Gave up after ${this.log.length} attempt(s)`}
+                — ${this.outcome.totalMs}ms total
+              </p>
+            `:""}
     `}};C.styles=re`
     :host {
       display: block;
@@ -193,14 +193,14 @@
                   </td>
                   <td>
                     ${s?f`
-                          <span class=${s.pass?"pass":"fail"}>
-                            ${s.pass?"✅ PASS":"❌ FAIL"}
-                          </span>
-                          <br />
-                          <small>
-                            ${s.actualError?`threw: ${s.actualError}`:s.actualHeaders.length?s.actualHeaders.map(([r,i])=>`${r}: ${i}`).join(", "):"(no headers)"}
-                          </small>
-                        `:f`<em>not run</em>`}
+                            <span class=${s.pass?"pass":"fail"}>
+                              ${s.pass?"✅ PASS":"❌ FAIL"}
+                            </span>
+                            <br />
+                            <small>
+                              ${s.actualError?`threw: ${s.actualError}`:s.actualHeaders.length?s.actualHeaders.map(([r,i])=>`${r}: ${i}`).join(", "):"(no headers)"}
+                            </small>
+                          `:f`<em>not run</em>`}
                   </td>
                 </tr>
               `})}
@@ -268,26 +268,26 @@
 
         ${this.manualError?f`<pre class="error">Error: ${this.manualError}</pre>`:""}
         ${this.manualResult?f`
-              <h3>Resulting request</h3>
-              <p>
-                <strong>${this.manualResult.method}</strong> ${this.manualResult.url}
-              </p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Header</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${this.manualResult.headers.map(([e,t])=>f`<tr>
-                        <td>${e}</td>
-                        <td>${t}</td>
-                      </tr>`)}
-                </tbody>
-              </table>
-              ${this.manualResult.headers.some(([e])=>e.toLowerCase()==="x-csrf-token")?f`<p class="pass">✅ X-CSRF-Token attached</p>`:f`<p class="skip">⏭️ No X-CSRF-Token header sent</p>`}
-            `:""}
+                <h3>Resulting request</h3>
+                <p>
+                  <strong>${this.manualResult.method}</strong> ${this.manualResult.url}
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${this.manualResult.headers.map(([e,t])=>f`<tr>
+                          <td>${e}</td>
+                          <td>${t}</td>
+                        </tr>`)}
+                  </tbody>
+                </table>
+                ${this.manualResult.headers.some(([e])=>e.toLowerCase()==="x-csrf-token")?f`<p class="pass">✅ X-CSRF-Token attached</p>`:f`<p class="skip">⏭️ No X-CSRF-Token header sent</p>`}
+              `:""}
       </section>
 
       <section>
@@ -378,9 +378,9 @@
             blank. Edit it to send a bad/expired token and confirm the backend
             actually rejects it.
             ${this.liveRequireCsrfToken?"":f`<br /><strong
-                    >requireCsrfToken is unchecked — no token will be
-                    sent.</strong
-                  >`}
+                      >requireCsrfToken is unchecked — no token will be
+                      sent.</strong
+                    >`}
           </small>
         </fieldset>
 
@@ -390,33 +390,34 @@
 
         ${this.liveError?f`<pre class="error">Error: ${this.liveError}</pre>`:""}
         ${this.liveHeaders?f`
-              <h3>Request headers sent</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Header</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${this.liveHeaders.map(([e,t])=>f`<tr>
-                        <td>${e}</td>
-                        <td>${t}</td>
-                      </tr>`)}
-                </tbody>
-              </table>
-              <p>
-                <small>
-                  Value came from the CSRF Token field above (auto-fetched from
-                  <code>${this.liveBaseUrl}/services/csrf-token</code>
-                  unless you edited it).
-                </small>
-              </p>
-            `:""}
+                <h3>Request headers sent</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${this.liveHeaders.map(([e,t])=>f`<tr>
+                          <td>${e}</td>
+                          <td>${t}</td>
+                        </tr>`)}
+                  </tbody>
+                </table>
+                <p>
+                  <small>
+                    Value came from the CSRF Token field above (auto-fetched
+                    from
+                    <code>${this.liveBaseUrl}/services/csrf-token</code>
+                    unless you edited it).
+                  </small>
+                </p>
+              `:""}
         ${this.liveResult!==void 0?f`
-              <h3>Response</h3>
-              <pre>${JSON.stringify(this.liveResult,null,2)}</pre>
-            `:""}
+                <h3>Response</h3>
+                <pre>${JSON.stringify(this.liveResult,null,2)}</pre>
+              `:""}
       </section>
     `}};v.styles=re`
     :host {
