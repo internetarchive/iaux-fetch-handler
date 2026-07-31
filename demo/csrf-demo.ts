@@ -393,23 +393,27 @@ export class CsrfDemo extends LitElement {
                     <button @click=${() => this.runScenario(index)}>Run</button>
                   </td>
                   <td>
-                    ${result
-                      ? html`
-                          <span class=${result.pass ? 'pass' : 'fail'}>
-                            ${result.pass ? '✅ PASS' : '❌ FAIL'}
-                          </span>
-                          <br />
-                          <small>
-                            ${result.actualError
-                              ? `threw: ${result.actualError}`
-                              : result.actualHeaders.length
-                                ? result.actualHeaders
-                                    .map(([k, v]) => `${k}: ${v}`)
-                                    .join(', ')
-                                : '(no headers)'}
-                          </small>
-                        `
-                      : html`<em>not run</em>`}
+                    ${
+                      result
+                        ? html`
+                            <span class=${result.pass ? 'pass' : 'fail'}>
+                              ${result.pass ? '✅ PASS' : '❌ FAIL'}
+                            </span>
+                            <br />
+                            <small>
+                              ${
+                                result.actualError
+                                  ? `threw: ${result.actualError}`
+                                  : result.actualHeaders.length
+                                    ? result.actualHeaders
+                                        .map(([k, v]) => `${k}: ${v}`)
+                                        .join(', ')
+                                    : '(no headers)'
+                              }
+                            </small>
+                          `
+                        : html`<em>not run</em>`
+                    }
                   </td>
                 </tr>
               `;
@@ -486,40 +490,47 @@ export class CsrfDemo extends LitElement {
 
         <button @click=${this.sendManualRequest}>Send</button>
 
-        ${this.manualError
-          ? html`<pre class="error">Error: ${this.manualError}</pre>`
-          : ''}
-        ${this.manualResult
-          ? html`
-              <h3>Resulting request</h3>
-              <p>
-                <strong>${this.manualResult.method}</strong> ${this.manualResult
-                  .url}
-              </p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Header</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${this.manualResult.headers.map(
-                    ([k, v]) =>
-                      html`<tr>
-                        <td>${k}</td>
-                        <td>${v}</td>
-                      </tr>`,
-                  )}
-                </tbody>
-              </table>
-              ${this.manualResult.headers.some(
-                ([k]) => k.toLowerCase() === 'x-csrf-token',
-              )
-                ? html`<p class="pass">✅ X-CSRF-Token attached</p>`
-                : html`<p class="skip">⏭️ No X-CSRF-Token header sent</p>`}
-            `
-          : ''}
+        ${
+          this.manualError
+            ? html`<pre class="error">Error: ${this.manualError}</pre>`
+            : ''
+        }
+        ${
+          this.manualResult
+            ? html`
+                <h3>Resulting request</h3>
+                <p>
+                  <strong>${this.manualResult.method}</strong> ${
+                    this.manualResult.url
+                  }
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${this.manualResult.headers.map(
+                      ([k, v]) =>
+                        html`<tr>
+                          <td>${k}</td>
+                          <td>${v}</td>
+                        </tr>`,
+                    )}
+                  </tbody>
+                </table>
+                ${
+                  this.manualResult.headers.some(
+                    ([k]) => k.toLowerCase() === 'x-csrf-token',
+                  )
+                    ? html`<p class="pass">✅ X-CSRF-Token attached</p>`
+                    : html`<p class="skip">⏭️ No X-CSRF-Token header sent</p>`
+                }
+              `
+            : ''
+        }
       </section>
 
       <section>
@@ -625,12 +636,14 @@ export class CsrfDemo extends LitElement {
             Auto-fetched from <code>/services/csrf-token</code> on Send if left
             blank. Edit it to send a bad/expired token and confirm the backend
             actually rejects it.
-            ${!this.liveRequireCsrfToken
-              ? html`<br /><strong
-                    >requireCsrfToken is unchecked — no token will be
-                    sent.</strong
-                  >`
-              : ''}
+            ${
+              !this.liveRequireCsrfToken
+                ? html`<br /><strong
+                      >requireCsrfToken is unchecked — no token will be
+                      sent.</strong
+                    >`
+                : ''
+            }
           </small>
         </fieldset>
 
@@ -638,44 +651,51 @@ export class CsrfDemo extends LitElement {
           ${this.liveLoading ? 'Sending…' : 'Send live request'}
         </button>
 
-        ${this.liveError
-          ? html`<pre class="error">Error: ${this.liveError}</pre>`
-          : ''}
-        ${this.liveHeaders
-          ? html`
-              <h3>Request headers sent</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Header</th>
-                    <th>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${this.liveHeaders.map(
-                    ([k, v]) =>
-                      html`<tr>
-                        <td>${k}</td>
-                        <td>${v}</td>
-                      </tr>`,
-                  )}
-                </tbody>
-              </table>
-              <p>
-                <small>
-                  Value came from the CSRF Token field above (auto-fetched from
-                  <code>${this.liveBaseUrl}/services/csrf-token</code>
-                  unless you edited it).
-                </small>
-              </p>
-            `
-          : ''}
-        ${this.liveResult !== undefined
-          ? html`
-              <h3>Response</h3>
-              <pre>${JSON.stringify(this.liveResult, null, 2)}</pre>
-            `
-          : ''}
+        ${
+          this.liveError
+            ? html`<pre class="error">Error: ${this.liveError}</pre>`
+            : ''
+        }
+        ${
+          this.liveHeaders
+            ? html`
+                <h3>Request headers sent</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${this.liveHeaders.map(
+                      ([k, v]) =>
+                        html`<tr>
+                          <td>${k}</td>
+                          <td>${v}</td>
+                        </tr>`,
+                    )}
+                  </tbody>
+                </table>
+                <p>
+                  <small>
+                    Value came from the CSRF Token field above (auto-fetched
+                    from
+                    <code>${this.liveBaseUrl}/services/csrf-token</code>
+                    unless you edited it).
+                  </small>
+                </p>
+              `
+            : ''
+        }
+        ${
+          this.liveResult !== undefined
+            ? html`
+                <h3>Response</h3>
+                <pre>${JSON.stringify(this.liveResult, null, 2)}</pre>
+              `
+            : ''
+        }
       </section>
     `;
   }

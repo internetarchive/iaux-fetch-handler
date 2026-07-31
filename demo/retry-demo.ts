@@ -110,8 +110,7 @@ export class RetryDemo extends LitElement {
             .value=${this.configKey}
             @change=${(e: Event) => {
               this.configKey = (e.target as HTMLSelectElement).value as
-                | 'default'
-                | 'noRetry';
+                'default' | 'noRetry';
             }}
           >
             <option value="default">
@@ -138,43 +137,49 @@ export class RetryDemo extends LitElement {
         ${this.loading ? 'Sending…' : 'Send request'}
       </button>
 
-      ${this.log.length
-        ? html`
-            <h3>Attempts</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Attempt</th>
-                  <th>Status</th>
-                  <th>Time since start</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${this.log.map(
-                  entry => html`
-                    <tr>
-                      <td>${entry.attempt}</td>
-                      <td class=${entry.status === 200 ? 'pass' : 'fail'}>
-                        ${entry.status}
-                      </td>
-                      <td>${entry.timeSinceStartMs}ms</td>
-                    </tr>
-                  `,
-                )}
-              </tbody>
-            </table>
-          `
-        : ''}
-      ${this.outcome
-        ? html`
-            <p class=${this.outcome.success ? 'pass' : 'fail'}>
-              ${this.outcome.success
-                ? `✅ Succeeded after ${this.log.length} attempt(s)`
-                : `❌ Gave up after ${this.log.length} attempt(s)`}
-              — ${this.outcome.totalMs}ms total
-            </p>
-          `
-        : ''}
+      ${
+        this.log.length
+          ? html`
+              <h3>Attempts</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Attempt</th>
+                    <th>Status</th>
+                    <th>Time since start</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${this.log.map(
+                    entry => html`
+                      <tr>
+                        <td>${entry.attempt}</td>
+                        <td class=${entry.status === 200 ? 'pass' : 'fail'}>
+                          ${entry.status}
+                        </td>
+                        <td>${entry.timeSinceStartMs}ms</td>
+                      </tr>
+                    `,
+                  )}
+                </tbody>
+              </table>
+            `
+          : ''
+      }
+      ${
+        this.outcome
+          ? html`
+              <p class=${this.outcome.success ? 'pass' : 'fail'}>
+                ${
+                  this.outcome.success
+                    ? `✅ Succeeded after ${this.log.length} attempt(s)`
+                    : `❌ Gave up after ${this.log.length} attempt(s)`
+                }
+                — ${this.outcome.totalMs}ms total
+              </p>
+            `
+          : ''
+      }
     `;
   }
 
