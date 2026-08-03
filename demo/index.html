@@ -6,22 +6,116 @@
     body {
       background: #fff;
       font-family: sans-serif;
+      margin: 0;
+    }
+
+    h1.page-title {
+      text-align: center;
+      padding: 20px 0 0;
+      margin: 0;
+    }
+
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      border-bottom: 1px solid #ddd;
+      margin-top: 16px;
+      padding: 0 16px;
+    }
+
+    .tab-button {
+      font: inherit;
+      font-size: 15px;
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: none;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .tab-button:hover {
+      background: #f5f5f5;
+    }
+
+    .tab-button.active {
+      border-color: #ddd;
+      background: #fff;
+      color: #000;
+      position: relative;
+      top: 1px;
+    }
+
+    .tab-panel {
+      min-height: 0;
     }
   </style>
 </head>
 <body>
-  <div id="demo"></div>
+  <h1 class="page-title">@internetarchive/fetch-handler demos</h1>
+  <div class="tab-bar" role="tablist"></div>
+  <div class="tab-panel" id="tab-panel"></div>
 
   <script type="module">
     import { html, render } from 'lit-html';
-    import '../dist/demo/app-root.js';
 
-    render(
-      html`
-        <app-root></app-root>
-      `,
-      document.querySelector('#demo')
-    );
+    const TABS = [
+      {
+        id: 'fetch-demo',
+        label: 'Fetch Demo',
+        load: () => import('../dist/demo/app-root.js'),
+        template: () => html`<app-root></app-root>`,
+      },
+      {
+        id: 'csrf-demo',
+        label: 'CSRF Demo',
+        load: () => import('../dist/demo/csrf-demo.js'),
+        template: () => html`<csrf-demo></csrf-demo>`,
+      },
+      {
+        id: 'retry-demo',
+        label: 'Retry Demo',
+        load: () => import('../dist/demo/retry-demo.js'),
+        template: () => html`<retry-demo></retry-demo>`,
+      },
+    ];
+
+    const tabBar = document.querySelector('.tab-bar');
+    const panel = document.querySelector('#tab-panel');
+    const loaded = new Set();
+
+    async function selectTab(tab) {
+      tabBar.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.toggle('active', button.dataset.tabId === tab.id);
+      });
+
+      // Clear the previous tab's element out of the DOM (and off of
+      // lit-html's render cache for this container) before mounting the
+      // next one, so only one demo is ever live at a time.
+      render(html``, panel);
+
+      if (!loaded.has(tab.id)) {
+        await tab.load();
+        loaded.add(tab.id);
+      }
+
+      render(tab.template(), panel);
+    }
+
+    TABS.forEach((tab, index) => {
+      const button = document.createElement('button');
+      button.className = 'tab-button';
+      button.type = 'button';
+      button.role = 'tab';
+      button.dataset.tabId = tab.id;
+      button.textContent = tab.label;
+      button.addEventListener('click', () => selectTab(tab));
+      tabBar.appendChild(button);
+
+      if (index === 0) selectTab(tab);
+    });
   </script>
 </body>
 </html>

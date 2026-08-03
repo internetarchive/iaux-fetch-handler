@@ -6,6 +6,13 @@ import type { RetryConfiguring } from './fetch-retry/configuration/retry-configu
 export type FetchOptions = {
   requestInit?: RequestInit;
   retryConfig?: RetryConfiguring;
+  /**
+   * Set to opt this request into an automatic `X-CSRF-Token` header (when
+   * the FetchHandler was constructed with a `getCsrfToken` source). Off by
+   * default — only opt in once the target endpoint's CORS policy is known
+   * to allow-list that header.
+   */
+  includeCsrfToken?: boolean;
 };
 
 /**
@@ -17,4 +24,11 @@ export type ApiFetchOptions = {
   body?: BodyInit;
   headers?: HeadersInit;
   retryConfig?: RetryConfiguring;
+  /**
+   * Set to opt this request into an automatic `X-CSRF-Token` header (when
+   * the FetchHandler was constructed with a `getCsrfToken` source). Off by
+   * default — only opt in once the target endpoint's CORS policy is known
+   * to allow-list that header.
+   */
+  includeCsrfToken?: boolean;
 };

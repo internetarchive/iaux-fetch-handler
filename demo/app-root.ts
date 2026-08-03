@@ -41,13 +41,15 @@ export class AppRoot extends LitElement {
     return html`
       <div class="container">
         <h1>Fetch Data</h1>
-        ${this.loading
-          ? html`<p>Loading...</p>`
-          : this.error
-            ? html`<p class="error">${this.error}</p>`
-            : this.data
-              ? html`<pre>${JSON.stringify(this.data, null, 2)}</pre>`
-              : html`<p>No data available.</p>`}
+        ${
+          this.loading
+            ? html`<p>Loading...</p>`
+            : this.error
+              ? html`<p class="error">${this.error}</p>`
+              : this.data
+                ? html`<pre>${JSON.stringify(this.data, null, 2)}</pre>`
+                : html`<p>No data available.</p>`
+        }
         <button @click="${this.fetchData}">Retry</button>
       </div>
     `;

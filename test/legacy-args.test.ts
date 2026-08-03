@@ -24,4 +24,10 @@ describe('legacyArgsAsFetchOptions', () => {
     const fo = legacyArgsAsFetchOptions(undefined);
     expect(fo).to.equal(undefined);
   });
+
+  it('recognizes FetchOptions by includeCsrfToken alone', () => {
+    const options: FetchOptions = { includeCsrfToken: true };
+    const fo = legacyArgsAsFetchOptions(options);
+    expect(fo).to.equal(options);
+  });
 });

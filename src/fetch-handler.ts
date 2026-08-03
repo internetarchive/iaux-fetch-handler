@@ -2,6 +2,7 @@ import {
   FetchRetrier,
   FetchRetrierInterface,
 } from './fetch-retry/fetch-retrier';
+import { legacyArgsAsFetchOptions } from './fetch-retry/legacy-args';
 import type { FetchHandlerInterface } from './fetch-handler-interface';
 import type { ApiFetchOptions, FetchOptions } from './fetch-options';
 
@@ -11,7 +12,23 @@ export type FetchHandlerConstructorOptions = {
   apiBaseUrl?: string;
   fetchRetrier?: FetchRetrierInterface;
   searchParams?: string;
+  /**
+   * Optional CSRF token source. When provided, callers can opt individual
+   * `POST`/`PUT`/`DELETE` requests into an automatic `X-CSRF-Token` header
+   * by passing `includeCsrfToken: true` (see `ApiFetchOptions`/
+   * `FetchOptions`). Requests that don't opt in are unaffected — this is
+   * off by default because not every backend endpoint's CORS policy
+   * allow-lists that header yet.
+   */
+  getCsrfToken?: () => Promise<string>;
 };
+
+const METHODS_REQUIRING_CSRF_TOKEN = new Set([
+  'POST',
+  'PUT',
+  'DELETE',
+  'PATCH',
+]);
 
 /**
  * The FetchHandler adds some common helpers:
@@ -26,6 +43,8 @@ export class FetchHandler implements FetchHandlerInterface {
 
   private searchParams?: string;
 
+  private getCsrfToken?: () => Promise<string>;
+
   constructor(options?: FetchHandlerConstructorOptions) {
     if (options?.apiBaseUrl) {
       this.apiBaseUrl = options.apiBaseUrl;
@@ -38,6 +57,7 @@ export class FetchHandler implements FetchHandlerInterface {
     } else {
       this.searchParams = window.location.search;
     }
+    if (options?.getCsrfToken) this.getCsrfToken = options.getCsrfToken;
   }
 
   /** @inheritdoc */
@@ -51,7 +71,8 @@ export class FetchHandler implements FetchHandlerInterface {
       const urlString = typeof request === 'string' ? request : request.url;
       finalRequest = this.addSearchParams(urlString, { reCache: '1' });
     }
-    return this.fetchRetrier.fetchRetry(finalRequest, options);
+    const finalOptions = await this.withCsrfToken(finalRequest, options);
+    return this.fetchRetrier.fetchRetry(finalRequest, finalOptions);
   }
 
   /** @inheritdoc */
@@ -73,6 +94,7 @@ export class FetchHandler implements FetchHandlerInterface {
     const response = await this.fetch(url, {
       requestInit: requestInit,
       retryConfig: options?.retryConfig,
+      includeCsrfToken: options?.includeCsrfToken,
     });
     const json = await response.json();
     return json as T;
@@ -93,6 +115,45 @@ export class FetchHandler implements FetchHandlerInterface {
     options?: ApiFetchOptions,
   ): Promise<T> {
     return this.fetchApiPathResponse(path, options);
+  }
+
+  /**
+   * If a CSRF token source was configured, the caller opted in via
+   * `includeCsrfToken: true`, and the request method needs one, resolve the
+   * token and attach it as an `X-CSRF-Token` header. Off by default: not
+   * every backend endpoint's CORS policy allow-lists that header yet, so
+   * each caller opts in only once its endpoint is known to support it.
+   * Requests that already carry that header are left untouched.
+   *
+   * @param request - The request being made, used to infer the method
+   * @param options - The options passed in to `fetch`
+   * @returns Options with the CSRF header attached, or the original options
+   */
+  private async withCsrfToken(
+    request: RequestInfo,
+    options?: RequestInit | FetchOptions,
+  ): Promise<RequestInit | FetchOptions | undefined> {
+    if (!this.getCsrfToken) return options;
+
+    const fetchOptions = legacyArgsAsFetchOptions(options) ?? {};
+    if (!fetchOptions.includeCsrfToken) return options;
+
+    const requestInit = fetchOptions.requestInit ?? {};
+    const method = (
+      requestInit.method ??
+      (typeof request !== 'string' ? request.method : undefined) ??
+      'GET'
+    ).toUpperCase();
+    if (!METHODS_REQUIRING_CSRF_TOKEN.has(method)) return options;
+
+    const headers = new Headers(requestInit.headers);
+    if (headers.has('X-CSRF-Token')) return options;
+    headers.set('X-CSRF-Token', await this.getCsrfToken());
+
+    return {
+      ...fetchOptions,
+      requestInit: { ...requestInit, headers },
+    };
   }
 
   /**
@@ -122,12 +183,7 @@ export class FetchHandler implements FetchHandlerInterface {
  * @deprecated Use `FetchHandler` instead.
  */
 export class IaFetchHandler extends FetchHandler {
-  constructor(options?: {
-    iaApiBaseUrl?: string;
-    apiBaseUrl?: string;
-    fetchRetrier?: FetchRetrierInterface;
-    searchParams?: string;
-  }) {
+  constructor(options?: FetchHandlerConstructorOptions) {
     const superOptions = { ...options };
     superOptions.iaApiBaseUrl = options?.iaApiBaseUrl ?? 'https://archive.org';
     super(superOptions);
