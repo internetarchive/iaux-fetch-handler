@@ -9,7 +9,7 @@ A custom library for handling API requests.
 
 ## Demo
 
-[Live demo](https://internetarchive.github.io/iaux-fetch-handler/main/) — try a plain fetch, a CSRF-protected request, and the retrier against real responses.
+[Live demo](https://internetarchive.github.io/iaux-fetch-handler/) — try a plain fetch, a CSRF-protected request, and the retrier against real responses.
 
 
 ## Installation
