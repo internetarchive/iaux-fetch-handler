@@ -1,4 +1,6 @@
-# This workflow will generate the static page under `main` subdirectory inside the `gh-pages` branch
+# This workflow will generate the static page at the root of the `gh-pages` branch,
+# so the demo is served from the Pages URL itself. PR previews live alongside it
+# under `pr/`, which is why that path is excluded from cleaning.
 
 # This workflow will run every time new changes were pushed to the `main` branch
 
@@ -41,4 +43,3 @@ jobs:
           folder: ghpages
           clean-exclude: pr/
           force: false
-          target-folder: main
