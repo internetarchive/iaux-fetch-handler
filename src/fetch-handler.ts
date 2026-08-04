@@ -4,7 +4,11 @@ import {
 } from './fetch-retry/fetch-retrier';
 import { legacyArgsAsFetchOptions } from './fetch-retry/legacy-args';
 import type { FetchHandlerInterface } from './fetch-handler-interface';
-import type { ApiFetchOptions, FetchOptions } from './fetch-options';
+import type {
+  ApiFetchOptions,
+  FetchOptions,
+  QueryParams,
+} from './fetch-options';
 
 export type FetchHandlerConstructorOptions = {
   /** @deprecated Use `apiBaseUrl` instead. */
@@ -91,7 +95,10 @@ export class FetchHandler implements FetchHandlerInterface {
       });
     }
     requestInit.headers = headers;
-    const response = await this.fetch(url, {
+    const finalUrl = options?.queryParams
+      ? this.addSearchParams(url, options.queryParams)
+      : url;
+    const response = await this.fetch(finalUrl, {
       requestInit: requestInit,
       retryConfig: options?.retryConfig,
       includeCsrfToken: options?.includeCsrfToken,
@@ -159,21 +166,62 @@ export class FetchHandler implements FetchHandlerInterface {
   /**
    * Construct a new URL with the given search params added
    *
+   * Works on the URL string rather than parsing it into a `URL`, so a
+   * base-relative or scheme-relative input (`/services/foo`,
+   * `www.example.com/foo`) comes back in the form it went in instead of being
+   * resolved against the current page.
+   *
    * @param urlString - Original URL string
-   * @param params - Params to add
+   * @param params - Params to add, replacing any of the same name already on the URL
    * @returns New URL string with params added
    */
-  private addSearchParams(
-    urlString: string,
-    params: Record<string, string>,
-  ): string {
-    const url = new URL(urlString, window.location.href);
+  private addSearchParams(urlString: string, params: QueryParams): string {
+    const hashIndex = urlString.indexOf('#');
+    const hash = hashIndex === -1 ? '' : urlString.slice(hashIndex);
+    const path = hashIndex === -1 ? urlString : urlString.slice(0, hashIndex);
 
-    for (const [key, value] of Object.entries(params)) {
-      url.searchParams.set(key, value);
-    }
+    const queryIndex = path.indexOf('?');
+    const base = queryIndex === -1 ? path : path.slice(0, queryIndex);
+    const searchParams = new URLSearchParams(
+      queryIndex === -1 ? '' : path.slice(queryIndex + 1),
+    );
 
-    return url.href;
+    const newParams = FetchHandler.asSearchParams(params);
+
+    // Clear each incoming key before appending any of them, so a key that
+    // repeats within `newParams` replaces what the URL had rather than
+    // stacking onto it.
+    const clearedKeys = new Set<string>();
+    newParams.forEach((_value, key) => {
+      if (clearedKeys.has(key)) return;
+      clearedKeys.add(key);
+      searchParams.delete(key);
+    });
+    newParams.forEach((value, key) => {
+      searchParams.append(key, value);
+    });
+
+    const search = searchParams.toString();
+    return `${base}${search ? `?${search}` : ''}${hash}`;
+  }
+
+  /**
+   * Normalize the record form of `QueryParams` into `URLSearchParams`,
+   * dropping `undefined`/`null` values so callers can pass optional params
+   * without guarding each one.
+   *
+   * @param params - Params in either accepted form
+   * @returns The params as `URLSearchParams`
+   */
+  private static asSearchParams(params: QueryParams): URLSearchParams {
+    if (params instanceof URLSearchParams) return params;
+
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      searchParams.append(key, String(value));
+    });
+    return searchParams;
   }
 }
 

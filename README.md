@@ -52,6 +52,30 @@ async fetchData() {
 
 See the `demo` directory for a more detailed example.
 
+## Query Params
+
+Pass `queryParams` instead of building the query string yourself. Values are stringified and URL-encoded, and `undefined`/`null` entries are dropped, so optional params can go straight in without a conditional:
+
+```ts
+// GET https://archive.org/services/content-flags/?identifier=goody
+await fetchHandler.fetchApiPathResponse('/services/content-flags/', {
+  queryParams: { identifier: 'goody', mediatype: undefined },
+});
+```
+
+Params of the same name already on the URL are replaced. To repeat a key, pass a `URLSearchParams`:
+
+```ts
+const queryParams = new URLSearchParams();
+queryParams.append('flag', 'spam');
+queryParams.append('flag', 'violence');
+
+// GET https://archive.org/services/content-flags/?flag=spam&flag=violence
+await fetchHandler.fetchApiPathResponse('/services/content-flags/', {
+  queryParams,
+});
+```
+
 ## Configuring Retry
 
 You can customize how you'd like `FetchHandler` to retry a request, both globally and per-request.

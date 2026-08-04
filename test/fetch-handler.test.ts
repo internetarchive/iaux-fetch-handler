@@ -72,6 +72,16 @@ describe('Fetch Handler', () => {
       await fetchHandler.fetch('https://foo.org/api/v1/snoot');
       expect(fetchRetrier.requestInfo).to.equal('https://foo.org/api/v1/snoot');
     });
+
+    it('keeps a relative request relative when adding reCache=1', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        searchParams: '?reCache=1',
+      });
+      await fetchHandler.fetch('/api/v1/snoot');
+      expect(fetchRetrier.requestInfo).to.equal('/api/v1/snoot?reCache=1');
+    });
   });
 
   describe('fetchApiPathResponse', () => {
@@ -166,6 +176,165 @@ describe('Fetch Handler', () => {
         retryConfig,
       });
       expect(fetchRetrier.retryConfig).to.equal(retryConfig);
+    });
+  });
+
+  describe('queryParams', () => {
+    it('appends params to a url that has none', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { identifier: 'goody', count: 50 },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?identifier=goody&count=50',
+      );
+    });
+
+    it('url-encodes keys and values', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { q: 'a b&c=d', 'we ird': '#hash' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?q=a+b%26c%3Dd&we+ird=%23hash',
+      );
+    });
+
+    it('stringifies numbers and booleans', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { page: 2, debug: true, ratio: 0 },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?page=2&debug=true&ratio=0',
+      );
+    });
+
+    it('drops undefined and null values', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: {
+          identifier: 'goody',
+          mediatype: undefined,
+          scope: null,
+        },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?identifier=goody',
+      );
+    });
+
+    it('leaves the url alone when every value is dropped', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { mediatype: undefined },
+      });
+      expect(fetchRetrier.requestInfo).to.equal('https://example.org/api');
+    });
+
+    it('merges with params already on the url', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api?sort=date', {
+        queryParams: { page: 2 },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?sort=date&page=2',
+      );
+    });
+
+    it('overrides a param already on the url', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api?page=1', {
+        queryParams: { page: 2 },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?page=2',
+      );
+    });
+
+    it('accepts a URLSearchParams with repeated keys', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      const queryParams = new URLSearchParams();
+      queryParams.append('flag', 'spam');
+      queryParams.append('flag', 'violence');
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams,
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?flag=spam&flag=violence',
+      );
+    });
+
+    it('replaces rather than stacks when a repeated key is already on the url', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      const queryParams = new URLSearchParams();
+      queryParams.append('flag', 'spam');
+      queryParams.append('flag', 'violence');
+      await fetchHandler.fetchApiResponse('https://example.org/api?flag=old', {
+        queryParams,
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?flag=spam&flag=violence',
+      );
+    });
+
+    it('keeps the params ahead of a fragment', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiResponse('https://example.org/api#section', {
+        queryParams: { page: 2 },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?page=2#section',
+      );
+    });
+
+    it('is applied by fetchApiPathResponse after the base url', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        apiBaseUrl: 'https://example.org',
+        fetchRetrier,
+      });
+      await fetchHandler.fetchApiPathResponse('/services/content-flags/', {
+        queryParams: { identifier: 'goody' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/services/content-flags/?identifier=goody',
+      );
+    });
+
+    it('leaves a relative path relative', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetchApiPathResponse('/services/content-flags/', {
+        queryParams: { identifier: 'goody' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        '/services/content-flags/?identifier=goody',
+      );
+    });
+
+    it('coexists with reCache=1', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        searchParams: '?reCache=1',
+      });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { identifier: 'goody' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?identifier=goody&reCache=1',
+      );
     });
   });
 
