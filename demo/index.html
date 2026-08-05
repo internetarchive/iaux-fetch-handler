@@ -80,6 +80,12 @@
         load: () => import('../dist/demo/retry-demo.js'),
         template: () => html`<retry-demo></retry-demo>`,
       },
+      {
+        id: 'query-params-demo',
+        label: 'Query Params',
+        load: () => import('../dist/demo/query-params-demo.js'),
+        template: () => html`<query-params-demo></query-params-demo>`,
+      },
     ];
 
     const tabBar = document.querySelector('.tab-bar');
