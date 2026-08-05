@@ -243,7 +243,9 @@ export class QueryParamsDemo extends LitElement {
 
   @state() private hostParams: HostParams = 'none';
 
-  @state() private result?: { call: string; url: string };
+  @state() private asRequest = false;
+
+  @state() private result?: { call: string; url: string; sent?: string };
 
   @state() private error?: string;
 
@@ -263,22 +265,36 @@ export class QueryParamsDemo extends LitElement {
     return { handler, retrier };
   }
 
-  /** Runs one call and returns the url FetchHandler would have requested. */
-  private async capturedUrl(
+  /**
+   * A `Request` carrying a method, a header and a body, so the rebuild that
+   * adding params to a `Request` performs has something visible to preserve.
+   */
+  private static demoRequest(url: string): Request {
+    return new Request(url, {
+      method: 'POST',
+      headers: { 'X-Boop': 'snoot' },
+      body: 'hello',
+    });
+  }
+
+  /** Runs one call and returns the retrier holding what was requested. */
+  private async capture(
     method: Method,
     target: string,
     params: QueryParams | undefined,
     hostParams: HostParams,
-  ): Promise<string> {
+    asRequest = false,
+  ): Promise<CapturingFetchRetrier> {
     const { handler, retrier } = this.buildHandler(hostParams);
     if (method === 'fetch') {
-      await handler.fetch(target, { queryParams: params });
+      const request = asRequest ? QueryParamsDemo.demoRequest(target) : target;
+      await handler.fetch(request, { queryParams: params });
     } else if (method === 'fetchApiResponse') {
       await handler.fetchApiResponse(target, { queryParams: params });
     } else {
       await handler.fetchApiPathResponse(target, { queryParams: params });
     }
-    return retrier.lastUrl;
+    return retrier;
   }
 
   /** Rows with a key, which are the only ones that produce a param. */
@@ -316,7 +332,11 @@ export class QueryParamsDemo extends LitElement {
         : `const fetchHandler = new FetchHandler({\n  apiBaseUrl: '${API_BASE_URL}',\n  queryParams: ${
             HOST_PARAMS_SOURCE[this.hostParams]
           },\n})\n\n`;
-    return `${construction}fetchHandler.${this.method}('${this.target}', {\n  queryParams: ${params},\n})`;
+    const target =
+      this.method === 'fetch' && this.asRequest
+        ? `new Request('${this.target}', {\n    method: 'POST',\n    headers: { 'X-Boop': 'snoot' },\n    body: 'hello',\n  })`
+        : `'${this.target}'`;
+    return `${construction}fetchHandler.${this.method}(${target}, {\n  queryParams: ${params},\n})`;
   }
 
   private async run() {
@@ -324,13 +344,19 @@ export class QueryParamsDemo extends LitElement {
     this.result = undefined;
     const call = this.describeCall();
     try {
-      const url = await this.capturedUrl(
+      const retrier = await this.capture(
         this.method,
         this.target,
         this.buildQueryParams(),
         this.hostParams,
+        this.asRequest,
       );
-      this.result = { call, url };
+      const sent = retrier.lastRequest
+        ? `${retrier.lastRequest.method} with X-Boop: ${retrier.lastRequest.headers.get(
+            'X-Boop',
+          )} and body ${JSON.stringify(await retrier.lastRequest.text())}`
+        : undefined;
+      this.result = { call, url: retrier.lastUrl, sent };
     } catch (err) {
       this.error = String(err);
     }
@@ -340,7 +366,7 @@ export class QueryParamsDemo extends LitElement {
     const scenario = SCENARIOS[index];
     let result: ScenarioResult;
     try {
-      const actualUrl = await this.capturedUrl(
+      const { lastUrl: actualUrl } = await this.capture(
         scenario.method,
         scenario.target,
         scenario.params,
@@ -535,6 +561,27 @@ export class QueryParamsDemo extends LitElement {
           puts the params it wants on every request it makes, such as
           <code>reCache=1</code>.
         </p>
+        ${
+          this.method === 'fetch'
+            ? html`
+                <label>
+                  <input
+                    type="checkbox"
+                    .checked=${this.asRequest}
+                    @change=${(e: Event) => {
+                      this.asRequest = (e.target as HTMLInputElement).checked;
+                    }}
+                  />
+                  Pass a <code>Request</code> object instead of a url string
+                </label>
+                <p class="note">
+                  Adding params to a <code>Request</code> means rebuilding it,
+                  so the result below reports the method, header and body that
+                  came out the other side.
+                </p>
+              `
+            : ''
+        }
       </fieldset>
 
       ${this.renderParamsEditor()}
@@ -547,6 +594,14 @@ export class QueryParamsDemo extends LitElement {
               <h3>Result</h3>
               <pre>${this.result.call}</pre>
               <p>Requests <code class="url">${this.result.url}</code></p>
+              ${
+                this.result.sent
+                  ? html`<p>
+                      Sent as a <code>Request</code>:
+                      <code>${this.result.sent}</code>
+                    </p>`
+                  : ''
+              }
             `
           : ''
       }
