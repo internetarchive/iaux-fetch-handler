@@ -1,13 +1,34 @@
 import { html, LitElement, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { FetchHandler } from '../src/fetch-handler';
-import type { QueryParams } from '../src/fetch-options';
+import type { QueryParams, QueryParamsProvider } from '../src/fetch-options';
 import { CapturingFetchRetrier } from './capturing-fetch-retrier';
 
 const API_BASE_URL = 'https://example.org';
 
 /** The entry points a caller can reach query params through. */
 type Method = 'fetchApiPathResponse' | 'fetchApiResponse' | 'fetch';
+
+/** Which handler-wide `queryParams` the host is standing in for. */
+type HostParams = 'none' | 'always' | 'scoped';
+
+/**
+ * The forms the handler-wide option takes. A host uses this to inject its own
+ * ambient params, such as `reCache=1`. The function form is called per
+ * request, so params can be scoped to the urls they belong on.
+ */
+const HOST_PARAMS: Record<HostParams, QueryParamsProvider | undefined> = {
+  none: undefined,
+  always: { reCache: '1' },
+  scoped: url => (url.startsWith(API_BASE_URL) ? { reCache: '1' } : undefined),
+};
+
+/** The handler-wide option written the way it would appear in source. */
+const HOST_PARAMS_SOURCE: Record<HostParams, string> = {
+  none: '',
+  always: `{ reCache: '1' }`,
+  scoped: `url =>\n    url.startsWith('${API_BASE_URL}') ? { reCache: '1' } : undefined`,
+};
 
 /**
  * Which of the two `QueryParams` shapes to send. The record form carries
@@ -26,7 +47,7 @@ type Scenario = {
   method: Method;
   target: string;
   params?: QueryParams;
-  reCache?: boolean;
+  hostParams?: HostParams;
   expectedUrl: string;
 };
 
@@ -155,25 +176,55 @@ const SCENARIOS: Scenario[] = [
     expectedUrl: '/local/api?q=cats',
   },
   {
-    label: 'queryParams and reCache=1 coexist',
+    label: 'fetch() takes queryParams too',
+    method: 'fetch',
+    target: `${API_BASE_URL}/download/goody/page1.jpg?scale=2`,
+    params: { reCache: '1' },
+    expectedUrl: `${API_BASE_URL}/download/goody/page1.jpg?scale=2&reCache=1`,
+  },
+  {
+    label: 'A host param and a per-request param coexist',
     method: 'fetchApiPathResponse',
     target: '/search',
     params: { q: 'cats' },
-    reCache: true,
-    expectedUrl: `${API_BASE_URL}/search?q=cats&reCache=1`,
+    hostParams: 'always',
+    expectedUrl: `${API_BASE_URL}/search?reCache=1&q=cats`,
   },
   {
-    label: 'fetch() takes no queryParams, so the url goes in as typed',
+    label: 'A host param reaches fetch() as well',
     method: 'fetch',
     target: `${API_BASE_URL}/download/goody/page1.jpg?scale=2`,
-    expectedUrl: `${API_BASE_URL}/download/goody/page1.jpg?scale=2`,
-  },
-  {
-    label: 'fetch() still merges reCache=1 into a url you built yourself',
-    method: 'fetch',
-    target: `${API_BASE_URL}/download/goody/page1.jpg?scale=2`,
-    reCache: true,
+    hostParams: 'always',
     expectedUrl: `${API_BASE_URL}/download/goody/page1.jpg?scale=2&reCache=1`,
+  },
+  {
+    label: 'A per-request param overrides the host param',
+    method: 'fetchApiPathResponse',
+    target: '/search',
+    params: { reCache: '0' },
+    hostParams: 'always',
+    expectedUrl: `${API_BASE_URL}/search?reCache=0`,
+  },
+  {
+    label: 'A host param replaces one already on the url',
+    method: 'fetch',
+    target: `${API_BASE_URL}/search?reCache=0`,
+    hostParams: 'always',
+    expectedUrl: `${API_BASE_URL}/search?reCache=1`,
+  },
+  {
+    label: 'A scoped host param is left off a url it does not match',
+    method: 'fetchApiResponse',
+    target: 'https://third-party.org/api',
+    hostParams: 'scoped',
+    expectedUrl: 'https://third-party.org/api',
+  },
+  {
+    label: 'A scoped host param is added to a url it does match',
+    method: 'fetchApiPathResponse',
+    target: '/search',
+    hostParams: 'scoped',
+    expectedUrl: `${API_BASE_URL}/search?reCache=1`,
   },
 ];
 
@@ -190,7 +241,7 @@ export class QueryParamsDemo extends LitElement {
     { key: 'mediatype', value: '', kind: 'undefined' },
   ];
 
-  @state() private reCache = false;
+  @state() private hostParams: HostParams = 'none';
 
   @state() private result?: { call: string; url: string };
 
@@ -198,13 +249,8 @@ export class QueryParamsDemo extends LitElement {
 
   @state() private scenarioResults: Record<number, ScenarioResult> = {};
 
-  /**
-   * `searchParams` is the *page's* query string, which is where FetchHandler
-   * looks for `reCache=1`. An empty string is falsy and would fall back to
-   * `window.location.search`, so the off case passes `reCache=0` to keep the
-   * demo independent of the url the demo page itself was loaded with.
-   */
-  private buildHandler(reCache: boolean): {
+  /** A handler set up the way a host with ambient params would build one. */
+  private buildHandler(hostParams: HostParams): {
     handler: FetchHandler;
     retrier: CapturingFetchRetrier;
   } {
@@ -212,7 +258,7 @@ export class QueryParamsDemo extends LitElement {
     const handler = new FetchHandler({
       apiBaseUrl: API_BASE_URL,
       fetchRetrier: retrier,
-      searchParams: reCache ? 'reCache=1' : 'reCache=0',
+      queryParams: HOST_PARAMS[hostParams],
     });
     return { handler, retrier };
   }
@@ -222,11 +268,11 @@ export class QueryParamsDemo extends LitElement {
     method: Method,
     target: string,
     params: QueryParams | undefined,
-    reCache: boolean,
+    hostParams: HostParams,
   ): Promise<string> {
-    const { handler, retrier } = this.buildHandler(reCache);
+    const { handler, retrier } = this.buildHandler(hostParams);
     if (method === 'fetch') {
-      await handler.fetch(target);
+      await handler.fetch(target, { queryParams: params });
     } else if (method === 'fetchApiResponse') {
       await handler.fetchApiResponse(target, { queryParams: params });
     } else {
@@ -255,9 +301,6 @@ export class QueryParamsDemo extends LitElement {
 
   /** The equivalent source for whatever the controls are currently set to. */
   private describeCall(): string {
-    if (this.method === 'fetch') {
-      return `fetchHandler.fetch('${this.target}')`;
-    }
     const rows = this.activeRows();
     const params =
       this.paramsForm === 'searchParams'
@@ -267,7 +310,13 @@ export class QueryParamsDemo extends LitElement {
         : `{ ${rows
             .map(row => `${describeKey(row.key)}: ${describeValue(row)}`)
             .join(', ')} }`;
-    return `fetchHandler.${this.method}('${this.target}', {\n  queryParams: ${params},\n})`;
+    const construction =
+      this.hostParams === 'none'
+        ? ''
+        : `const fetchHandler = new FetchHandler({\n  apiBaseUrl: '${API_BASE_URL}',\n  queryParams: ${
+            HOST_PARAMS_SOURCE[this.hostParams]
+          },\n})\n\n`;
+    return `${construction}fetchHandler.${this.method}('${this.target}', {\n  queryParams: ${params},\n})`;
   }
 
   private async run() {
@@ -278,8 +327,8 @@ export class QueryParamsDemo extends LitElement {
       const url = await this.capturedUrl(
         this.method,
         this.target,
-        this.method === 'fetch' ? undefined : this.buildQueryParams(),
-        this.reCache,
+        this.buildQueryParams(),
+        this.hostParams,
       );
       this.result = { call, url };
     } catch (err) {
@@ -295,7 +344,7 @@ export class QueryParamsDemo extends LitElement {
         scenario.method,
         scenario.target,
         scenario.params,
-        Boolean(scenario.reCache),
+        scenario.hostParams ?? 'none',
       );
       result = { actualUrl, pass: actualUrl === scenario.expectedUrl };
     } catch (err) {
@@ -322,23 +371,6 @@ export class QueryParamsDemo extends LitElement {
 
   private removeRow(index: number) {
     this.rows = this.rows.filter((_row, i) => i !== index);
-  }
-
-  private renderFetchNote() {
-    return html`
-      <p class="note">
-        <code>fetch()</code> takes <code>RequestInit | FetchOptions</code>, and
-        neither of those carries <code>queryParams</code>, so put them on the
-        url you pass in. <code>reCache=1</code> still gets merged. A helper for
-        building that url is
-        <a
-          href="https://webarchive.jira.com/browse/WEBDEV-8858"
-          target="_blank"
-          rel="noopener"
-          >WEBDEV-8858</a
-        >.
-      </p>
-    `;
   }
 
   private renderParamsEditor() {
@@ -483,22 +515,29 @@ export class QueryParamsDemo extends LitElement {
           />
         </label>
         <label>
-          <input
-            type="checkbox"
-            .checked=${this.reCache}
+          Host <code>queryParams</code>:
+          <select
+            .value=${this.hostParams}
             @change=${(e: Event) => {
-              this.reCache = (e.target as HTMLInputElement).checked;
+              this.hostParams = (e.target as HTMLSelectElement)
+                .value as HostParams;
             }}
-          />
-          Page url has <code>reCache=1</code>
+          >
+            <option value="none">None</option>
+            <option value="always">{ reCache: '1' } on every request</option>
+            <option value="scoped">
+              Function, so only ${API_BASE_URL} urls get it
+            </option>
+          </select>
         </label>
+        <p class="note">
+          Handler-wide params, passed to the constructor. This is where a host
+          puts the params it wants on every request it makes, such as
+          <code>reCache=1</code>.
+        </p>
       </fieldset>
 
-      ${
-        this.method === 'fetch'
-          ? this.renderFetchNote()
-          : this.renderParamsEditor()
-      }
+      ${this.renderParamsEditor()}
 
       <button @click=${this.run}>Show url</button>
       ${this.error ? html`<p class="fail">${this.error}</p>` : ''}

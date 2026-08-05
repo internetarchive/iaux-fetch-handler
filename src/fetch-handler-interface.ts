@@ -2,7 +2,8 @@ import type { ApiFetchOptions, FetchOptions } from './fetch-options';
 
 export interface FetchHandlerInterface {
   /**
-   * Generic fetch function that handles retries and common IA parameters like `reCache=1`
+   * Generic fetch function that handles retries and merges query params into
+   * the request url
    *
    * @param input RequestInfo
    * @param options RequestInit | FetchOptions

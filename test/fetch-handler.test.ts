@@ -38,49 +38,224 @@ describe('Fetch Handler', () => {
   });
 
   describe('fetch', () => {
-    it('adds reCache=1 if it is in the current url', async () => {
+    it('requests the url as given when there are no params to add', async () => {
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
-        fetchRetrier: fetchRetrier,
-        searchParams: '?reCache=1',
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetch('https://foo.org/api/v1/snoot?foo=bar');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api/v1/snoot?foo=bar',
+      );
+    });
+
+    it('merges queryParams given for the request', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetch('https://foo.org/api/v1/snoot', {
+        queryParams: { reCache: '1' },
       });
-      await fetchHandler.fetch('https://foo.org/api/v1/snoot');
       expect(fetchRetrier.requestInfo).to.equal(
         'https://foo.org/api/v1/snoot?reCache=1',
       );
     });
 
-    it('appends reCache=1 when request is a Request object', async () => {
+    it('reads queryParams when it is the only option given', async () => {
+      // Guards legacyArgsAsFetchOptions: FetchOptions is told apart from
+      // RequestInit by its keys, so queryParams on its own has to be enough
+      // to identify it. Miss it and the params are dropped with no type error.
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
-        fetchRetrier,
-        searchParams: '?reCache=1',
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetch('https://foo.org/api', {
+        queryParams: { q: 'cats' },
       });
-      const req = new Request('https://foo.org/api/v1/snoot');
-      await fetchHandler.fetch(req);
-      expect(fetchRetrier.requestInfo).to.equal(
-        'https://foo.org/api/v1/snoot?reCache=1',
-      );
+      expect(fetchRetrier.requestInfo).to.equal('https://foo.org/api?q=cats');
     });
 
-    it('does not append reCache when not present', async () => {
+    it('still accepts a bare RequestInit', async () => {
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
-        fetchRetrier,
-        searchParams: '?foo=bar',
-      });
-      await fetchHandler.fetch('https://foo.org/api/v1/snoot');
-      expect(fetchRetrier.requestInfo).to.equal('https://foo.org/api/v1/snoot');
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetch('https://foo.org/api', { method: 'POST' });
+      expect(fetchRetrier.init?.method).to.equal('POST');
     });
 
-    it('keeps a relative request relative when adding reCache=1', async () => {
+    it('keeps a relative request relative when adding params', async () => {
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
-        fetchRetrier,
-        searchParams: '?reCache=1',
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      await fetchHandler.fetch('/api/v1/snoot', {
+        queryParams: { reCache: '1' },
       });
-      await fetchHandler.fetch('/api/v1/snoot');
       expect(fetchRetrier.requestInfo).to.equal('/api/v1/snoot?reCache=1');
+    });
+  });
+
+  describe('handler-wide queryParams', () => {
+    it('merges them into every request', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+
+      await fetchHandler.fetch('https://foo.org/api/v1/snoot');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api/v1/snoot?reCache=1',
+      );
+
+      await fetchHandler.fetch('https://foo.org/api/v1/boop');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api/v1/boop?reCache=1',
+      );
+    });
+
+    it('merges them into the api helpers too', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        apiBaseUrl: 'https://example.org',
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      await fetchHandler.fetchApiPathResponse('/metadata/goody');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/metadata/goody?reCache=1',
+      );
+    });
+
+    it('replaces a param of the same name already on the url', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      await fetchHandler.fetch('https://foo.org/api?reCache=0');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api?reCache=1',
+      );
+    });
+
+    it('is overridden by a param given for the request', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      await fetchHandler.fetch('https://foo.org/api', {
+        queryParams: { reCache: '0' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api?reCache=0',
+      );
+    });
+
+    it('coexists with params given for the request', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      await fetchHandler.fetchApiResponse('https://example.org/api', {
+        queryParams: { identifier: 'goody' },
+      });
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://example.org/api?reCache=1&identifier=goody',
+      );
+    });
+
+    it('accepts a URLSearchParams', async () => {
+      const queryParams = new URLSearchParams();
+      queryParams.append('flag', 'spam');
+      queryParams.append('flag', 'violence');
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier, queryParams });
+      await fetchHandler.fetch('https://foo.org/api');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://foo.org/api?flag=spam&flag=violence',
+      );
+    });
+
+    it('takes a function of the url so a host can scope them', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: url =>
+          url.startsWith('https://archive.org') ? { reCache: '1' } : undefined,
+      });
+
+      await fetchHandler.fetch('https://archive.org/metadata/goody');
+      expect(fetchRetrier.requestInfo).to.equal(
+        'https://archive.org/metadata/goody?reCache=1',
+      );
+
+      await fetchHandler.fetch('https://third-party.org/api');
+      expect(fetchRetrier.requestInfo).to.equal('https://third-party.org/api');
+    });
+
+    it('passes the function the url the api helpers built', async () => {
+      const urls: string[] = [];
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        apiBaseUrl: 'https://example.org',
+        fetchRetrier,
+        queryParams: url => {
+          urls.push(url);
+          return undefined;
+        },
+      });
+      await fetchHandler.fetchApiPathResponse('/metadata/goody');
+      expect(urls).to.deep.equal(['https://example.org/metadata/goody']);
+    });
+
+    it('adds nothing when the function returns no params', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: () => ({}),
+      });
+      await fetchHandler.fetch('https://foo.org/api');
+      expect(fetchRetrier.requestInfo).to.equal('https://foo.org/api');
+    });
+  });
+
+  describe('Request objects', () => {
+    it('is handed through untouched when there are no params to add', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({ fetchRetrier });
+      const request = new Request('https://foo.org/api');
+      await fetchHandler.fetch(request);
+      expect(fetchRetrier.requestInfo).to.equal(request);
+    });
+
+    it('keeps its method and headers when params are added', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      const request = new Request('https://foo.org/api', {
+        method: 'POST',
+        headers: { 'X-Boop': 'snoot' },
+      });
+      await fetchHandler.fetch(request);
+
+      const sent = fetchRetrier.requestInfo as Request;
+      expect(sent.url).to.equal('https://foo.org/api?reCache=1');
+      expect(sent.method).to.equal('POST');
+      expect(sent.headers.get('X-Boop')).to.equal('snoot');
+    });
+
+    it('keeps its body when params are added', async () => {
+      const fetchRetrier = new MockFetchRetrier();
+      const fetchHandler = new FetchHandler({
+        fetchRetrier,
+        queryParams: { reCache: '1' },
+      });
+      const request = new Request('https://foo.org/api', {
+        method: 'POST',
+        body: 'boop',
+      });
+      await fetchHandler.fetch(request);
+
+      const sent = fetchRetrier.requestInfo as Request;
+      expect(sent.url).to.equal('https://foo.org/api?reCache=1');
+      expect(await sent.text()).to.equal('boop');
     });
   });
 
@@ -323,18 +498,16 @@ describe('Fetch Handler', () => {
       );
     });
 
-    it('coexists with reCache=1', async () => {
+    it('is passed through by fetch() to the retrier without being sent as a RequestInit', async () => {
       const fetchRetrier = new MockFetchRetrier();
-      const fetchHandler = new FetchHandler({
-        fetchRetrier,
-        searchParams: '?reCache=1',
-      });
+      const fetchHandler = new FetchHandler({ fetchRetrier });
       await fetchHandler.fetchApiResponse('https://example.org/api', {
         queryParams: { identifier: 'goody' },
       });
       expect(fetchRetrier.requestInfo).to.equal(
-        'https://example.org/api?identifier=goody&reCache=1',
+        'https://example.org/api?identifier=goody',
       );
+      expect(fetchRetrier.init?.headers).to.exist;
     });
   });
 
