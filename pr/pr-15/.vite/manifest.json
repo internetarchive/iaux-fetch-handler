@@ -11,7 +11,7 @@
     ]
   },
   "../dist/demo/csrf-demo.js": {
-    "file": "assets/csrf-demo-dja02zxw.js",
+    "file": "assets/csrf-demo-AxktIHF-.js",
     "name": "csrf-demo",
     "src": "../dist/demo/csrf-demo.js",
     "isDynamicEntry": true,
@@ -19,7 +19,21 @@
       "_fetch-retrier-DsicMz2C.js",
       "index.html",
       "_state-fAVG4Avp.js",
-      "_fetch-handler-DEMXdJoS.js"
+      "_fetch-handler-DEMXdJoS.js",
+      "_capturing-fetch-retrier-x1FyT7Jf.js"
+    ]
+  },
+  "../dist/demo/query-params-demo.js": {
+    "file": "assets/query-params-demo-rEXVIl6C.js",
+    "name": "query-params-demo",
+    "src": "../dist/demo/query-params-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js",
+      "_fetch-handler-DEMXdJoS.js",
+      "_capturing-fetch-retrier-x1FyT7Jf.js"
     ]
   },
   "../dist/demo/retry-demo.js": {
@@ -31,6 +45,13 @@
       "_fetch-retrier-DsicMz2C.js",
       "index.html",
       "_state-fAVG4Avp.js"
+    ]
+  },
+  "_capturing-fetch-retrier-x1FyT7Jf.js": {
+    "file": "assets/capturing-fetch-retrier-x1FyT7Jf.js",
+    "name": "capturing-fetch-retrier",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
     ]
   },
   "_fetch-handler-DEMXdJoS.js": {
@@ -62,7 +83,8 @@
     "dynamicImports": [
       "../dist/demo/app-root.js",
       "../dist/demo/csrf-demo.js",
-      "../dist/demo/retry-demo.js"
+      "../dist/demo/retry-demo.js",
+      "../dist/demo/query-params-demo.js"
     ]
   }
 }
