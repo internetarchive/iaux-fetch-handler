@@ -1,0 +1,68 @@
+{
+  "../dist/demo/app-root.js": {
+    "file": "assets/app-root-DKlX-z7C.js",
+    "name": "app-root",
+    "src": "../dist/demo/app-root.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_fetch-handler-C6nLK8dR.js"
+    ]
+  },
+  "../dist/demo/csrf-demo.js": {
+    "file": "assets/csrf-demo-nTmXLdCh.js",
+    "name": "csrf-demo",
+    "src": "../dist/demo/csrf-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js",
+      "_fetch-handler-C6nLK8dR.js"
+    ]
+  },
+  "../dist/demo/retry-demo.js": {
+    "file": "assets/retry-demo-gNYjXwc8.js",
+    "name": "retry-demo",
+    "src": "../dist/demo/retry-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js"
+    ]
+  },
+  "_fetch-handler-C6nLK8dR.js": {
+    "file": "assets/fetch-handler-C6nLK8dR.js",
+    "name": "fetch-handler",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
+    ]
+  },
+  "_fetch-retrier-DsicMz2C.js": {
+    "file": "assets/fetch-retrier-DsicMz2C.js",
+    "name": "fetch-retrier",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_state-fAVG4Avp.js": {
+    "file": "assets/state-fAVG4Avp.js",
+    "name": "state",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
+    ]
+  },
+  "index.html": {
+    "file": "app-root.js",
+    "name": "main",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "../dist/demo/app-root.js",
+      "../dist/demo/csrf-demo.js",
+      "../dist/demo/retry-demo.js"
+    ]
+  }
+}
