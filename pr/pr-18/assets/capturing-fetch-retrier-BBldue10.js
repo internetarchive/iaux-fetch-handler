@@ -1,1 +1,0 @@
-import{l as i}from"./fetch-retrier-DQgSUyIF.js";class o{constructor(){this.lastUrl=""}async fetchRetry(t,r){const s=i(r);return this.lastUrl=typeof t=="string"?t:t.url,this.lastInit=s==null?void 0:s.requestInit,new Response(JSON.stringify({demo:!0}),{status:200})}}export{o as C};

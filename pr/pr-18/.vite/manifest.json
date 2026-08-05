@@ -11,7 +11,7 @@
     ]
   },
   "../dist/demo/csrf-demo.js": {
-    "file": "assets/csrf-demo-Crx9BqUE.js",
+    "file": "assets/csrf-demo-lPKOT_wm.js",
     "name": "csrf-demo",
     "src": "../dist/demo/csrf-demo.js",
     "isDynamicEntry": true,
@@ -20,11 +20,11 @@
       "index.html",
       "_state-iAArRRY0.js",
       "_fetch-handler-C6dqLdOT.js",
-      "_capturing-fetch-retrier-BBldue10.js"
+      "_capturing-fetch-retrier-BwzJCKns.js"
     ]
   },
   "../dist/demo/query-params-demo.js": {
-    "file": "assets/query-params-demo-Cb8e-hhN.js",
+    "file": "assets/query-params-demo-D4qZxAhw.js",
     "name": "query-params-demo",
     "src": "../dist/demo/query-params-demo.js",
     "isDynamicEntry": true,
@@ -33,7 +33,7 @@
       "index.html",
       "_state-iAArRRY0.js",
       "_fetch-handler-C6dqLdOT.js",
-      "_capturing-fetch-retrier-BBldue10.js"
+      "_capturing-fetch-retrier-BwzJCKns.js"
     ]
   },
   "../dist/demo/retry-demo.js": {
@@ -47,8 +47,8 @@
       "_state-iAArRRY0.js"
     ]
   },
-  "_capturing-fetch-retrier-BBldue10.js": {
-    "file": "assets/capturing-fetch-retrier-BBldue10.js",
+  "_capturing-fetch-retrier-BwzJCKns.js": {
+    "file": "assets/capturing-fetch-retrier-BwzJCKns.js",
     "name": "capturing-fetch-retrier",
     "imports": [
       "_fetch-retrier-DQgSUyIF.js"
