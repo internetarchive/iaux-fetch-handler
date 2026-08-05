@@ -17,6 +17,9 @@
 ## temp folders
 /.tmp/
 
+## git worktrees
+.claude/worktrees/
+
 # build
 /_site/
 /dist/
