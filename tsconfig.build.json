@@ -1,0 +1,6 @@
+{
+  // Emits only the published library. The root config stays broad so the demo
+  // and tests are still type-checked by `npm test`.
+  "extends": "./tsconfig.json",
+  "include": ["index.ts", "src/**/*.ts"]
+}
