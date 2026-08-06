@@ -76,6 +76,51 @@ await fetchHandler.fetchApiPathResponse('/services/content-flags/', {
 });
 ```
 
+`fetch()` takes the same option, for when you need the raw `Response` rather than decoded JSON:
+
+```ts
+const response = await fetchHandler.fetch('/download/goody/page1.jpg', {
+  queryParams: { scale: 2 },
+});
+```
+
+### Params on every request
+
+Pass `queryParams` to the constructor to put them on every request the handler makes. This is how an app forwards an ambient param of its own, like sending `reCache=1` to the backend when the page it's running on was loaded with `reCache=1`:
+
+```ts
+const pageParams = new URLSearchParams(window.location.search);
+
+const fetchHandler = new FetchHandler({
+  apiBaseUrl: 'https://archive.org',
+  queryParams: pageParams.get('reCache') === '1' ? { reCache: '1' } : undefined,
+});
+
+// GET https://archive.org/metadata/goody?reCache=1
+await fetchHandler.fetchApiPathResponse('/metadata/goody');
+```
+
+To put them on some requests and not others, pass a function. It's called with each request's URL, and returning nothing leaves that request alone:
+
+```ts
+const fetchHandler = new FetchHandler({
+  apiBaseUrl: 'https://archive.org',
+  queryParams: url =>
+    url.startsWith('https://archive.org') ? { reCache: '1' } : undefined,
+});
+```
+
+Params merge least specific first: what's already on the URL, then the handler's, then the request's. So a single call can override a param the handler sets for everything:
+
+```ts
+const fetchHandler = new FetchHandler({ queryParams: { reCache: '1' } });
+
+// GET https://archive.org/metadata/goody?reCache=0
+await fetchHandler.fetchApiResponse('https://archive.org/metadata/goody', {
+  queryParams: { reCache: '0' },
+});
+```
+
 ## Configuring Retry
 
 You can customize how you'd like `FetchHandler` to retry a request, both globally and per-request.
