@@ -1,0 +1,90 @@
+{
+  "../dist/demo/app-root.js": {
+    "file": "assets/app-root-WGjbUUZl.js",
+    "name": "app-root",
+    "src": "../dist/demo/app-root.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_fetch-handler-DEMXdJoS.js"
+    ]
+  },
+  "../dist/demo/csrf-demo.js": {
+    "file": "assets/csrf-demo-AxktIHF-.js",
+    "name": "csrf-demo",
+    "src": "../dist/demo/csrf-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js",
+      "_fetch-handler-DEMXdJoS.js",
+      "_capturing-fetch-retrier-x1FyT7Jf.js"
+    ]
+  },
+  "../dist/demo/query-params-demo.js": {
+    "file": "assets/query-params-demo-rEXVIl6C.js",
+    "name": "query-params-demo",
+    "src": "../dist/demo/query-params-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js",
+      "_fetch-handler-DEMXdJoS.js",
+      "_capturing-fetch-retrier-x1FyT7Jf.js"
+    ]
+  },
+  "../dist/demo/retry-demo.js": {
+    "file": "assets/retry-demo-gNYjXwc8.js",
+    "name": "retry-demo",
+    "src": "../dist/demo/retry-demo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js",
+      "index.html",
+      "_state-fAVG4Avp.js"
+    ]
+  },
+  "_capturing-fetch-retrier-x1FyT7Jf.js": {
+    "file": "assets/capturing-fetch-retrier-x1FyT7Jf.js",
+    "name": "capturing-fetch-retrier",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
+    ]
+  },
+  "_fetch-handler-DEMXdJoS.js": {
+    "file": "assets/fetch-handler-DEMXdJoS.js",
+    "name": "fetch-handler",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
+    ]
+  },
+  "_fetch-retrier-DsicMz2C.js": {
+    "file": "assets/fetch-retrier-DsicMz2C.js",
+    "name": "fetch-retrier",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "_state-fAVG4Avp.js": {
+    "file": "assets/state-fAVG4Avp.js",
+    "name": "state",
+    "imports": [
+      "_fetch-retrier-DsicMz2C.js"
+    ]
+  },
+  "index.html": {
+    "file": "app-root.js",
+    "name": "main",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "../dist/demo/app-root.js",
+      "../dist/demo/csrf-demo.js",
+      "../dist/demo/retry-demo.js",
+      "../dist/demo/query-params-demo.js"
+    ]
+  }
+}
