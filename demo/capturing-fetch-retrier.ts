@@ -14,12 +14,20 @@ export class CapturingFetchRetrier implements FetchRetrierInterface {
 
   lastInit?: RequestInit;
 
+  /**
+   * The `Request` the handler passed along, when it was given one rather than
+   * a url string. Adding query params to a `Request` means rebuilding it, so
+   * this is what shows the method, headers and body came through intact.
+   */
+  lastRequest?: Request;
+
   async fetchRetry(
     request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
     const fetchOptions = legacyArgsAsFetchOptions(options);
     this.lastUrl = typeof request === 'string' ? request : request.url;
+    this.lastRequest = typeof request === 'string' ? undefined : request;
     this.lastInit = fetchOptions?.requestInit;
     return new Response(JSON.stringify({ demo: true }), { status: 200 });
   }

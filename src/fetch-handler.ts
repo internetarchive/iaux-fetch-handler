@@ -8,6 +8,7 @@ import type {
   ApiFetchOptions,
   FetchOptions,
   QueryParams,
+  QueryParamsProvider,
 } from './fetch-options';
 
 export type FetchHandlerConstructorOptions = {
@@ -15,7 +16,15 @@ export type FetchHandlerConstructorOptions = {
   iaApiBaseUrl?: string;
   apiBaseUrl?: string;
   fetchRetrier?: FetchRetrierInterface;
-  searchParams?: string;
+  /**
+   * Query params merged into the URL of every request this handler makes.
+   * Pass a function to scope them to certain urls.
+   *
+   * This is how a host forwards its own ambient params, such as putting
+   * `reCache=1` on API calls when the page it's running on was loaded with
+   * `reCache=1`. The library has no opinion about which params those are.
+   */
+  queryParams?: QueryParamsProvider;
   /**
    * Optional CSRF token source. When provided, callers can opt individual
    * `POST`/`PUT`/`DELETE` requests into an automatic `X-CSRF-Token` header
@@ -37,7 +46,8 @@ const METHODS_REQUIRING_CSRF_TOKEN = new Set([
 /**
  * The FetchHandler adds some common helpers:
  * - retry the request if it fails
- * - add `reCache=1` to the request if it's in the current url so the backend sees it
+ * - merge query params into the request URL, per request or for every request
+ *   the handler makes
  * - add convenience method for fetching/decoding an API response by just the path
  */
 export class FetchHandler implements FetchHandlerInterface {
@@ -45,7 +55,7 @@ export class FetchHandler implements FetchHandlerInterface {
 
   private fetchRetrier: FetchRetrierInterface = new FetchRetrier();
 
-  private searchParams?: string;
+  private queryParams?: QueryParamsProvider;
 
   private getCsrfToken?: () => Promise<string>;
 
@@ -56,11 +66,7 @@ export class FetchHandler implements FetchHandlerInterface {
       this.apiBaseUrl = options.iaApiBaseUrl;
     }
     if (options?.fetchRetrier) this.fetchRetrier = options.fetchRetrier;
-    if (options?.searchParams) {
-      this.searchParams = options.searchParams;
-    } else {
-      this.searchParams = window.location.search;
-    }
+    if (options?.queryParams) this.queryParams = options.queryParams;
     if (options?.getCsrfToken) this.getCsrfToken = options.getCsrfToken;
   }
 
@@ -69,12 +75,10 @@ export class FetchHandler implements FetchHandlerInterface {
     request: RequestInfo,
     options?: RequestInit | FetchOptions,
   ): Promise<Response> {
-    let finalRequest = request;
-    const urlParams = new URLSearchParams(this.searchParams);
-    if (urlParams.get('reCache') === '1') {
-      const urlString = typeof request === 'string' ? request : request.url;
-      finalRequest = this.addSearchParams(urlString, { reCache: '1' });
-    }
+    const finalRequest = this.withQueryParams(
+      request,
+      legacyArgsAsFetchOptions(options)?.queryParams,
+    );
     const finalOptions = await this.withCsrfToken(finalRequest, options);
     return this.fetchRetrier.fetchRetry(finalRequest, finalOptions);
   }
@@ -95,13 +99,11 @@ export class FetchHandler implements FetchHandlerInterface {
       });
     }
     requestInit.headers = headers;
-    const finalUrl = options?.queryParams
-      ? this.addSearchParams(url, options.queryParams)
-      : url;
-    const response = await this.fetch(finalUrl, {
+    const response = await this.fetch(url, {
       requestInit: requestInit,
       retryConfig: options?.retryConfig,
       includeCsrfToken: options?.includeCsrfToken,
+      queryParams: options?.queryParams,
     });
     const json = await response.json();
     return json as T;
@@ -122,6 +124,46 @@ export class FetchHandler implements FetchHandlerInterface {
     options?: ApiFetchOptions,
   ): Promise<T> {
     return this.fetchApiPathResponse(path, options);
+  }
+
+  /**
+   * Merge the handler-wide query params and this request's own into the
+   * request URL.
+   *
+   * Precedence runs least to most specific: what the caller put on the url
+   * string, then the handler-wide params, then this request's params. So a
+   * host can inject a param for every request and an individual call can
+   * still override it.
+   *
+   * @param request - The request being made
+   * @param requestParams - Params for this request only
+   * @returns The request with the merged params on its url, or the original
+   *   request when there are no params to add
+   */
+  private withQueryParams(
+    request: RequestInfo,
+    requestParams?: QueryParams,
+  ): RequestInfo {
+    const urlString = typeof request === 'string' ? request : request.url;
+    const handlerParams =
+      typeof this.queryParams === 'function'
+        ? this.queryParams(urlString)
+        : this.queryParams;
+
+    const params = FetchHandler.mergeQueryParams([
+      handlerParams,
+      requestParams,
+    ]);
+    // `URLSearchParams.size` is too new to rely on, so check for a first key.
+    // Bailing here keeps a request with no params byte-identical rather than
+    // sending it through a parse/serialize round trip.
+    if (params.keys().next().done) return request;
+
+    const finalUrl = this.addSearchParams(urlString, params);
+    if (typeof request === 'string') return finalUrl;
+    // Rebuild rather than hand back the url on its own, so the method,
+    // headers and body of a `Request` survive having params added.
+    return new Request(finalUrl, request);
   }
 
   /**
@@ -186,23 +228,54 @@ export class FetchHandler implements FetchHandlerInterface {
       queryIndex === -1 ? '' : path.slice(queryIndex + 1),
     );
 
+    FetchHandler.replaceParams(searchParams, params);
+
+    const search = searchParams.toString();
+    return `${base}${search ? `?${search}` : ''}${hash}`;
+  }
+
+  /**
+   * Combine several sets of params into one, later sets winning over earlier
+   * ones on a shared key.
+   *
+   * @param paramSets - Params in precedence order, least specific first
+   * @returns The combined params
+   */
+  private static mergeQueryParams(
+    paramSets: (QueryParams | undefined)[],
+  ): URLSearchParams {
+    const merged = new URLSearchParams();
+    paramSets.forEach(params => {
+      if (params) FetchHandler.replaceParams(merged, params);
+    });
+    return merged;
+  }
+
+  /**
+   * Append `params` onto `target`, dropping any values `target` already held
+   * for the keys `params` carries.
+   *
+   * Every key is cleared before any is appended, so a key that repeats within
+   * `params` replaces what `target` had rather than stacking onto it.
+   *
+   * @param target - Params to merge into, modified in place
+   * @param params - Params to merge in
+   */
+  private static replaceParams(
+    target: URLSearchParams,
+    params: QueryParams,
+  ): void {
     const newParams = FetchHandler.asSearchParams(params);
 
-    // Clear each incoming key before appending any of them, so a key that
-    // repeats within `newParams` replaces what the URL had rather than
-    // stacking onto it.
     const clearedKeys = new Set<string>();
     newParams.forEach((_value, key) => {
       if (clearedKeys.has(key)) return;
       clearedKeys.add(key);
-      searchParams.delete(key);
+      target.delete(key);
     });
     newParams.forEach((value, key) => {
-      searchParams.append(key, value);
+      target.append(key, value);
     });
-
-    const search = searchParams.toString();
-    return `${base}${search ? `?${search}` : ''}${hash}`;
   }
 
   /**

@@ -8,6 +8,7 @@ export type {
   ApiFetchOptions,
   FetchOptions,
   QueryParams,
+  QueryParamsProvider,
 } from './src/fetch-options';
 export type { Milliseconds } from './src/fetch-retry/configuration/milliseconds';
 
