@@ -3,6 +3,8 @@
 
 # Internet Archive Fetch Handler library
 
+> Moved to [@internetarchive/elements](https://github.com/internetarchive/elements) (`src/services/fetch-handler`). New work goes there.
+
 
 A custom library for handling API requests.
 
